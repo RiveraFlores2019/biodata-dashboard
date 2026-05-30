@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BioData — Dashboard personal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Epilogue:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#0a0a0a;--bg2:#111111;--bg3:#181818;--surface:#1e1e1e;
+  --border:rgba(255,255,255,0.08);--border-accent:rgba(255,255,255,0.15);
+  --text:#f0ede8;--text2:#9a9690;--text3:#5a5754;
+  --accent:#c8f542;--accent2:#f5c842;--red:#ff5c5c;--orange:#ff9140;--green:#42f5a7;--blue:#42b4f5;
+  --serif:'DM Serif Display',Georgia,serif;--mono:'DM Mono',monospace;--sans:'Epilogue',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;line-height:1.7;overflow-x:hidden;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 3rem;background:rgba(10,10,10,0.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+.nav-logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:0.1em;}
+.nav-nombre{font-family:var(--mono);font-size:12px;color:var(--text2);}
+.nav-links{display:flex;gap:1.5rem;}
+.nav-links a{font-size:11px;color:var(--text3);text-decoration:none;letter-spacing:0.05em;text-transform:uppercase;transition:color 0.2s;}
+.nav-links a:hover{color:var(--text);}
+
+.hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:8rem 3rem 4rem;position:relative;overflow:hidden;border-bottom:1px solid var(--border);}
+.hero::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(200,245,66,0.05) 0%,transparent 70%);pointer-events:none;}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;border:1px solid rgba(200,245,66,0.3);padding:5px 14px;border-radius:2px;margin-bottom:1.5rem;width:fit-content;}
+.hero-tag::before{content:'●';font-size:8px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+h1{font-family:var(--serif);font-size:clamp(2.5rem,5vw,5rem);line-height:1.05;font-weight:400;margin-bottom:1rem;}
+h1 em{font-style:italic;color:var(--accent);}
+.hero-meta{font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:0.05em;}
+.hero-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:2.5rem;}
+.hcard{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px 16px;}
+.hcard-label{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:4px;}
+.hcard-val{font-size:20px;font-weight:500;}
+.hcard-unit{font-size:10px;color:var(--text3);}
+.hcard-badge{font-size:9px;font-family:var(--mono);padding:2px 8px;border-radius:2px;margin-top:4px;display:inline-block;}
+.ok{background:rgba(66,245,167,0.12);color:var(--green);}
+.warn{background:rgba(245,200,66,0.12);color:var(--accent2);}
+.bad{background:rgba(255,92,92,0.12);color:var(--red);}
+
+section{padding:5rem 3rem;}
+.section-label{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.75rem;}
+h2{font-family:var(--serif);font-size:clamp(1.8rem,3vw,3rem);font-weight:400;line-height:1.1;margin-bottom:1.25rem;}
+h2 em{font-style:italic;color:var(--accent);}
+.section-intro{font-size:15px;color:var(--text2);max-width:600px;line-height:1.8;margin-bottom:2.5rem;}
+
+/* SCORE */
+.score-wrap{display:grid;grid-template-columns:280px 1fr;gap:3rem;align-items:center;}
+.score-svg{width:220px;height:220px;}
+.score-breakdown{display:flex;flex-direction:column;gap:14px;}
+.sb-row{display:flex;flex-direction:column;gap:5px;}
+.sb-top{display:flex;justify-content:space-between;align-items:baseline;}
+.sb-name{font-size:13px;color:var(--text2);}
+.sb-val{font-family:var(--mono);font-size:13px;font-weight:500;}
+.sb-bar-bg{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.sb-bar-fill{height:100%;border-radius:3px;}
+.score-note{font-size:12px;color:var(--text3);margin-top:1.5rem;font-style:italic;}
+
+/* MÉTRICAS */
+.mex-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1.25rem;margin-bottom:2.5rem;}
+.mex-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.5rem;position:relative;overflow:hidden;}
+.mex-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.mex-card.cg::before{background:var(--green);}
+.mex-card.cb::before{background:var(--blue);}
+.mex-card.co::before{background:var(--orange);}
+.mex-card.cy::before{background:var(--accent2);}
+.mex-card.cr::before{background:var(--red);}
+.mex-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;}
+.mex-name{font-size:13px;font-weight:500;}
+.mex-acronym{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.mex-val{font-family:var(--mono);font-size:18px;font-weight:500;text-align:right;}
+.mex-unit{font-size:9px;color:var(--text3);display:block;}
+.mex-txt{font-size:12px;color:var(--text2);line-height:1.6;border-left:2px solid var(--border-accent);padding-left:10px;margin-bottom:0.75rem;}
+.mex-scale{display:flex;gap:3px;align-items:center;}
+.mex-sl{font-family:var(--mono);font-size:9px;color:var(--text3);margin-right:4px;}
+.seg{height:5px;flex:1;border-radius:1px;}
+.seg-marker{font-family:var(--mono);font-size:9px;color:var(--accent);margin-left:5px;white-space:nowrap;}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;}
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.5rem;}
+.chart-box.full{grid-column:1/-1;}
+.chart-title{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:1rem;}
+.hl-box{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:1.25rem 1.75rem;margin-top:1rem;}
+.hl-label{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.4rem;}
+.hl-box p{font-size:14px;color:var(--text);line-height:1.7;}
+
+/* RIESGOS */
+.risk-item{background:var(--surface);border:1px solid var(--border);border-radius:4px;margin-bottom:8px;overflow:hidden;}
+.risk-hdr{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;}
+.risk-n{font-family:var(--mono);font-size:10px;color:var(--text3);min-width:24px;}
+.risk-name{font-size:14px;font-weight:500;flex:1;}
+.risk-lv{font-family:var(--mono);font-size:9px;letter-spacing:0.06em;padding:3px 10px;border-radius:2px;}
+.lv-a{background:rgba(255,92,92,0.12);color:var(--red);}
+.lv-m{background:rgba(255,145,64,0.12);color:var(--orange);}
+.risk-body{padding:0.75rem 1.5rem 1.25rem 3rem;font-size:13px;color:var(--text2);line-height:1.75;border-top:1px solid var(--border);}
+.dpills{display:flex;flex-wrap:wrap;gap:6px;margin-top:0.6rem;}
+.dp{font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:2px 8px;border-radius:2px;}
+
+/* RECOMENDACIONES */
+.reco-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;}
+.reco-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.5rem;}
+.reco-hdr{display:flex;align-items:center;gap:10px;margin-bottom:0.875rem;}
+.reco-icon{width:38px;height:38px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.ri-a{background:rgba(200,245,66,0.1);}
+.ri-b{background:rgba(66,180,245,0.1);}
+.ri-c{background:rgba(255,92,92,0.1);}
+.ri-d{background:rgba(66,245,167,0.1);}
+.ri-e{background:rgba(245,200,66,0.1);}
+.reco-title{font-size:14px;font-weight:500;}
+.reco-sub{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:0.05em;text-transform:uppercase;}
+.reco-list{list-style:none;display:flex;flex-direction:column;gap:7px;}
+.reco-list li{font-size:12px;color:var(--text2);line-height:1.6;display:flex;gap:8px;}
+.reco-list li::before{content:'→';color:var(--accent);font-family:var(--mono);font-size:11px;flex-shrink:0;margin-top:1px;}
+.reco-ft{display:flex;align-items:center;margin-top:0.875rem;padding-top:0.875rem;border-top:1px solid var(--border);}
+.reco-ft-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:0.05em;text-transform:uppercase;}
+.reco-ft-val{font-family:var(--mono);font-size:10px;color:var(--accent);margin-left:auto;}
+
+/* CHECKLIST */
+.cl-wrap{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;}
+.cl-group{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.25rem;}
+.cl-gtitle{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.875rem;padding-bottom:0.6rem;border-bottom:1px solid var(--border);}
+.cl-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity 0.2s;}
+.cl-item:last-child{border-bottom:none;}
+.cl-item.done{opacity:0.45;}
+.cl-chk{width:18px;height:18px;border:1px solid var(--border-accent);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:all 0.2s;}
+.cl-item.done .cl-chk{background:var(--accent);border-color:var(--accent);}
+.cl-chk-mark{font-size:11px;color:#0a0a0a;display:none;}
+.cl-item.done .cl-chk-mark{display:block;}
+.cl-txt{flex:1;}
+.cl-title{font-size:13px;color:var(--text);margin-bottom:2px;}
+.cl-item.done .cl-title{color:var(--text3);text-decoration:line-through;}
+.cl-sub2{font-size:11px;color:var(--text3);}
+.cl-tag{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px;margin-left:auto;flex-shrink:0;margin-top:2px;}
+.t-u{background:rgba(255,92,92,0.1);color:var(--red);}
+.t-s{background:rgba(200,245,66,0.1);color:var(--accent);}
+.t-d{background:rgba(66,180,245,0.1);color:var(--blue);}
+.t-m{background:rgba(66,245,167,0.1);color:var(--green);}
+.cl-prog-bg{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:1.25rem;}
+.cl-prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.4s ease;}
+.cl-prog-lbl{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:5px;}
+
+.cta{background:var(--bg2);border-top:1px solid var(--border);text-align:center;padding:5rem 3rem;}
+.cta h2{margin-bottom:0.875rem;}
+.cta p{color:var(--text2);max-width:480px;margin:0 auto 2rem;font-size:15px;}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#0a0a0a;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;padding:12px 24px;border-radius:2px;text-decoration:none;}
+footer{border-top:1px solid var(--border);padding:1.75rem 3rem;display:flex;align-items:center;justify-content:space-between;}
+.fn{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.fade-in{opacity:0;transform:translateY(16px);transition:opacity 0.5s ease,transform 0.5s ease;}
+.fade-in.visible{opacity:1;transform:translateY(0);}
+/* EXÁMENES */
+.ex-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;}
+.ex-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.25rem;}
+.ex-card-title{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem;padding-bottom:0.6rem;border-bottom:1px solid var(--border);}
+.ex-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
+.ex-row:last-child{border-bottom:none;}
+.ex-name{font-size:12px;color:var(--text2);flex:1;}
+.ex-vals{display:flex;gap:10px;align-items:center;}
+.ex-val{font-family:var(--mono);font-size:12px;font-weight:500;min-width:52px;text-align:right;}
+.ex-unit{font-size:9px;color:var(--text3);min-width:36px;}
+.ex-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.ex-dot.ok{background:var(--green);}
+.ex-dot.warn{background:var(--accent2);}
+.ex-dot.bad{background:var(--red);}
+.ex-trend{font-family:var(--mono);font-size:10px;min-width:16px;text-align:center;}
+.ex-trend.up{color:var(--red);}
+.ex-trend.dn{color:var(--green);}
+.ex-trend.eq{color:var(--text3);}
+.ex-dates{display:flex;gap:10px;margin-bottom:1rem;}
+.ex-date-badge{font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);padding:3px 10px;border-radius:2px;}
+.ex-date-badge.active{border-color:rgba(200,245,66,0.4);color:var(--accent);}
+.ex-col-hdr{font-family:var(--mono);font-size:9px;color:var(--text3);text-align:right;min-width:52px;}
+/* EXÁMENES — explicación por valor */
+.ex-marker{padding:9px 0;border-bottom:1px solid var(--border);}
+.ex-marker:last-child{border-bottom:none;}
+.ex-marker .ex-row{border-bottom:none;padding:0 0 5px;}
+.ex-explain{display:flex;align-items:flex-start;gap:8px;padding-left:15px;}
+.ex-verdict{font-family:var(--mono);font-size:8px;letter-spacing:0.04em;padding:2px 7px;border-radius:2px;flex-shrink:0;text-transform:uppercase;line-height:1.5;}
+.ex-verdict.ok{background:rgba(66,245,167,0.12);color:var(--green);}
+.ex-verdict.warn{background:rgba(245,200,66,0.12);color:var(--accent2);}
+.ex-verdict.bad{background:rgba(255,92,92,0.12);color:var(--red);}
+.ex-verdict.eq{background:var(--bg3);color:var(--text3);}
+.ex-explain-txt{font-size:11px;color:var(--text3);line-height:1.55;}
+/* ANÁLISIS CRUZADO */
+.cross-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:1.25rem;}
+.cross-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.5rem;border-left:3px solid var(--border);}
+.cross-card.active{border-left-color:var(--red);}
+.cross-card.alert{border-left-color:var(--orange);}
+.cross-card.clear{border-left-color:var(--green);}
+.cross-hdr{display:flex;align-items:center;gap:10px;margin-bottom:1rem;}
+.cross-title{font-size:14px;font-weight:500;flex:1;line-height:1.3;}
+.cross-flag{font-family:var(--mono);font-size:9px;letter-spacing:0.05em;padding:3px 9px;border-radius:2px;flex-shrink:0;text-transform:uppercase;}
+.cross-flag.active{background:rgba(255,92,92,0.12);color:var(--red);}
+.cross-flag.alert{background:rgba(255,145,64,0.12);color:var(--orange);}
+.cross-flag.clear{background:rgba(66,245,167,0.12);color:var(--green);}
+.cross-legs{display:flex;gap:8px;align-items:stretch;margin-bottom:1rem;}
+.cross-leg{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:9px 11px;}
+.cross-leg-src{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;}
+.cross-leg-name{font-size:11px;color:var(--text2);margin:3px 0;}
+.cross-leg-val{font-family:var(--mono);font-size:14px;font-weight:500;}
+.cross-leg.hit{border-color:rgba(255,92,92,0.3);}
+.cross-leg.hit .cross-leg-val{color:var(--red);}
+.cross-leg.okv .cross-leg-val{color:var(--green);}
+.cross-leg.nd .cross-leg-val{color:var(--text3);font-size:11px;}
+.cross-plus{display:flex;align-items:center;color:var(--text3);font-family:var(--mono);font-size:15px;}
+.cross-txt{font-size:12px;color:var(--text2);line-height:1.7;}
+@media(max-width:768px){nav{padding:1rem 1.5rem;}.nav-links{display:none;}section{padding:3.5rem 1.5rem;}.hero{padding:6rem 1.5rem 3rem;}.hero-cards{grid-template-columns:repeat(3,1fr);}.chart-grid,.score-wrap,.cl-wrap{grid-template-columns:1fr;}footer{flex-direction:column;gap:1rem;}}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">BioData_</span>
+  <span class="nav-nombre" id="nav-nombre"></span>
+  <div class="nav-links">
+    <a href="#score">Score</a>
+    <a href="#metricas">Métricas</a>
+    <a href="#graficos">Gráficos</a>
+    <a href="#riesgos">Riesgos</a>
+    <a href="#examenes">Exámenes</a>
+    <a href="#cruzado">Cruzado</a>
+    <a href="#checklist">Checklist</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Análisis biométrico personal · Apple Health</div>
+  <h1 id="hero-titulo">Tu salud en <em>datos</em></h1>
+  <div class="hero-meta" id="hero-meta"></div>
+  <div class="hero-cards">
+    <div class="hcard"><div class="hcard-label">FC Reposo</div><div class="hcard-val" id="hc-rhr">—</div><div class="hcard-unit">bpm</div><div class="hcard-badge" id="hc-rhr-b">—</div></div>
+    <div class="hcard"><div class="hcard-label">VO2max</div><div class="hcard-val" id="hc-vo2">—</div><div class="hcard-unit">ml/kg/min</div><div class="hcard-badge" id="hc-vo2-b">—</div></div>
+    <div class="hcard"><div class="hcard-label">HRV</div><div class="hcard-val" id="hc-hrv">—</div><div class="hcard-unit">ms</div><div class="hcard-badge" id="hc-hrv-b">—</div></div>
+    <div class="hcard"><div class="hcard-label">Pasos/día</div><div class="hcard-val" id="hc-steps">—</div><div class="hcard-unit">promedio reciente</div><div class="hcard-badge" id="hc-steps-b">—</div></div>
+    <div class="hcard"><div class="hcard-label">Días activos</div><div class="hcard-val" id="hc-active">—</div><div class="hcard-unit">% días +10k pasos</div><div class="hcard-badge" id="hc-active-b">—</div></div>
+    <div class="hcard"><div class="hcard-label">FC activa</div><div class="hcard-val" id="hc-hr">—</div><div class="hcard-unit">bpm promedio</div><div class="hcard-badge ok">Normal</div></div>
+  </div>
+</div>
+
+<!-- SCORE -->
+<section id="score" style="background:var(--bg2);border-top:1px solid var(--border);">
+  <div class="section-label">01 — Score de salud</div>
+  <h2>Tu salud en <em>un número</em></h2>
+  <p class="section-intro">Índice compuesto 0–100 que pondera tus métricas biométricas reales. Compáralo en el tiempo: el objetivo es que suba.</p>
+  <div class="score-wrap fade-in">
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <svg class="score-svg" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#1e1e1e" stroke-width="14"/>
+        <circle id="scoreArc" cx="100" cy="100" r="80" fill="none" stroke="#c8f542" stroke-width="14"
+          stroke-linecap="round" stroke-dasharray="502" stroke-dashoffset="502"
+          transform="rotate(-90 100 100)" style="transition:stroke-dashoffset 1.5s ease;"/>
+        <text x="100" y="95" text-anchor="middle" font-family="DM Serif Display,serif" font-size="48" fill="#f0ede8" id="scoreNumSvg">0</text>
+        <text x="100" y="118" text-anchor="middle" font-family="DM Mono,monospace" font-size="11" fill="#5a5754">/100</text>
+        <text x="100" y="138" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="#c8f542" id="scoreLblSvg">—</text>
+      </svg>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-top:0.75rem;text-align:center;">Score actual</div>
+    </div>
+    <div class="score-breakdown">
+      <div class="sb-row"><div class="sb-top"><span class="sb-name">FC en reposo</span><span class="sb-val" id="sb-rhr-val" style="color:var(--green)">—/20</span></div><div class="sb-bar-bg"><div class="sb-bar-fill" id="sb-rhr-bar" style="background:var(--green);"></div></div></div>
+      <div class="sb-row"><div class="sb-top"><span class="sb-name">VO2max</span><span class="sb-val" id="sb-vo2-val" style="color:var(--blue)">—/20</span></div><div class="sb-bar-bg"><div class="sb-bar-fill" id="sb-vo2-bar" style="background:var(--blue);"></div></div></div>
+      <div class="sb-row"><div class="sb-top"><span class="sb-name">HRV</span><span class="sb-val" id="sb-hrv-val" style="color:var(--orange)">—/20</span></div><div class="sb-bar-bg"><div class="sb-bar-fill" id="sb-hrv-bar" style="background:var(--orange);"></div></div></div>
+      <div class="sb-row"><div class="sb-top"><span class="sb-name">Pasos diarios</span><span class="sb-val" id="sb-steps-val" style="color:var(--accent2)">—/20</span></div><div class="sb-bar-bg"><div class="sb-bar-fill" id="sb-steps-bar" style="background:var(--accent2);"></div></div></div>
+      <div class="sb-row"><div class="sb-top"><span class="sb-name">Consistencia de actividad</span><span class="sb-val" id="sb-cons-val" style="color:var(--accent)">—/20</span></div><div class="sb-bar-bg"><div class="sb-bar-fill" id="sb-cons-bar" style="background:var(--accent);"></div></div></div>
+      <p class="score-note">Un score sobre 70 indica buena salud cardiovascular y metabólica para tu perfil. Sobre 80 es excelente.</p>
+    </div>
+  </div>
+</section>
+
+<!-- MÉTRICAS EXPLICADAS -->
+<section id="metricas" style="background:var(--bg);border-top:1px solid var(--border);">
+  <div class="section-label">02 — Qué significan tus métricas</div>
+  <h2>Los números en <em>simple</em></h2>
+  <p class="section-intro">Cada métrica mide algo distinto de tu salud. Aquí qué significa cada una, dónde estás, y por qué importa.</p>
+  <div class="mex-grid fade-in">
+    <div class="mex-card cg">
+      <div class="mex-top"><div><div class="mex-name">FC en reposo</div><div class="mex-acronym">FC REPOSO</div></div><div><div class="mex-val" id="mx-rhr">—</div><div class="mex-unit">bpm</div></div></div>
+      <p class="mex-txt">Cuántas veces late tu corazón por minuto en reposo. Cuanto más bajo, más eficiente — un corazón entrenado hace más trabajo con menos esfuerzo. Menos de 60 bpm es nivel atlético.</p>
+      <div class="mex-scale"><span class="mex-sl">Escala:</span><div class="seg" style="background:var(--green)"></div><div class="seg" style="background:var(--accent)"></div><div class="seg" style="background:var(--accent2)"></div><div class="seg" style="background:var(--orange)"></div><div class="seg" style="background:var(--red)"></div><span class="seg-marker" id="mx-rhr-pos">← tú</span></div>
+    </div>
+    <div class="mex-card cb">
+      <div class="mex-top"><div><div class="mex-name">Capacidad aeróbica</div><div class="mex-acronym">VO2MAX</div></div><div><div class="mex-val" id="mx-vo2">—</div><div class="mex-unit">ml/kg/min</div></div></div>
+      <p class="mex-txt">Cuánto oxígeno usa tu cuerpo al máximo esfuerzo. Es el predictor más potente de longevidad — más que el colesterol o la presión arterial. Sobre 44 para tu grupo etario es excelente.</p>
+      <div class="mex-scale"><span class="mex-sl">Escala:</span><div class="seg" style="background:var(--red)"></div><div class="seg" style="background:var(--orange)"></div><div class="seg" style="background:var(--accent2)"></div><div class="seg" style="background:var(--accent)"></div><div class="seg" style="background:var(--green)"></div><span class="seg-marker" id="mx-vo2-pos">← tú</span></div>
+    </div>
+    <div class="mex-card co">
+      <div class="mex-top"><div><div class="mex-name">Variabilidad cardíaca</div><div class="mex-acronym">HRV</div></div><div><div class="mex-val" id="mx-hrv">—</div><div class="mex-unit">ms</div></div></div>
+      <p class="mex-txt">Variación en el tiempo entre latidos. Un corazón sano NO late como metrónomo — varía, señal de que tu sistema nervioso está equilibrado. HRV bajo indica estrés, mala recuperación o inflamación.</p>
+      <div class="mex-scale"><span class="mex-sl">Escala:</span><div class="seg" style="background:var(--red)"></div><div class="seg" style="background:var(--orange)"></div><div class="seg" style="background:var(--accent2)"></div><div class="seg" style="background:var(--accent)"></div><div class="seg" style="background:var(--green)"></div><span class="seg-marker" id="mx-hrv-pos">← tú</span></div>
+    </div>
+    <div class="mex-card cy">
+      <div class="mex-top"><div><div class="mex-name">Pasos diarios</div><div class="mex-acronym">STEPS/DÍA</div></div><div><div class="mex-val" id="mx-steps">—</div><div class="mex-unit">promedio</div></div></div>
+      <p class="mex-txt">Proxy más simple de actividad física. OMS recomienda 7.000–10.000 diarios. Lo importante no es solo el promedio — la consistencia día a día importa tanto como el número.</p>
+      <div class="mex-scale"><span class="mex-sl">Escala:</span><div class="seg" style="background:var(--red)"></div><div class="seg" style="background:var(--orange)"></div><div class="seg" style="background:var(--accent2)"></div><div class="seg" style="background:var(--accent)"></div><div class="seg" style="background:var(--green)"></div><span class="seg-marker" id="mx-steps-pos">← tú</span></div>
+    </div>
+    <div class="mex-card cg">
+      <div class="mex-top"><div><div class="mex-name">FC media diaria</div><div class="mex-acronym">FC ACTIVA</div></div><div><div class="mex-val" id="mx-hr">—</div><div class="mex-unit">bpm</div></div></div>
+      <p class="mex-txt">Promedio de todos los latidos del día incluyendo actividad. Refleja cuánto trabaja tu corazón en general. Los picos altos coinciden con días de ejercicio intenso o estrés elevado.</p>
+      <div class="mex-scale"><span class="mex-sl">Escala:</span><div class="seg" style="background:var(--green)"></div><div class="seg" style="background:var(--accent)"></div><div class="seg" style="background:var(--accent2)"></div><div class="seg" style="background:var(--orange)"></div><div class="seg" style="background:var(--red)"></div><span class="seg-marker">← normal</span></div>
+    </div>
+    <div class="mex-card cr">
+      <div class="mex-top"><div><div class="mex-name">Consistencia</div><div class="mex-acronym">DÍAS ACTIVOS</div></div><div><div class="mex-val" id="mx-cons">—</div><div class="mex-unit">% días +10k</div></div></div>
+      <p class="mex-txt">El porcentaje de días en que superas los 10.000 pasos. La irregularidad — días muy activos seguidos de días muy sedentarios — es tan riesgosa como el sedentarismo constante.</p>
+      <div class="mex-scale"><span class="mex-sl">Escala:</span><div class="seg" style="background:var(--red)"></div><div class="seg" style="background:var(--orange)"></div><div class="seg" style="background:var(--accent2)"></div><div class="seg" style="background:var(--accent)"></div><div class="seg" style="background:var(--green)"></div><span class="seg-marker" id="mx-cons-pos">← tú</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- GRÁFICOS -->
+<section id="graficos" style="background:var(--bg2);border-top:1px solid var(--border);">
+  <div class="section-label">03 — Evolución temporal</div>
+  <h2>Tu historia <em>en el tiempo</em></h2>
+  <p class="section-intro">Datos reales extraídos de Apple Health. Lo que sube y baja no es un número — es tu comportamiento.</p>
+  <div class="chart-grid fade-in">
+    <div class="chart-box full"><div class="chart-title">Frecuencia cardíaca diaria</div><div style="height:180px"><canvas id="hrChart" role="img" aria-label="FC diaria"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">VO2max — capacidad aeróbica</div><div style="height:180px"><canvas id="vo2Chart" role="img" aria-label="VO2max"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">HRV — variabilidad cardíaca</div><div style="height:180px"><canvas id="hrvChart" role="img" aria-label="HRV"></canvas></div></div>
+    <div class="chart-box full"><div class="chart-title">FC en reposo</div><div style="height:150px"><canvas id="rhrChart" role="img" aria-label="FC reposo"></canvas></div></div>
+    <div class="chart-box full"><div class="chart-title">Pasos diarios</div><div style="height:150px"><canvas id="stepsChart" role="img" aria-label="Pasos diarios"></canvas></div></div>
+  </div>
+  <div class="hl-box fade-in">
+    <div class="hl-label">Dato clave en tus datos</div>
+    <p id="hallazgo-txt">Analizando tus datos...</p>
+  </div>
+</section>
+
+<!-- RIESGOS -->
+<section id="riesgos" style="background:var(--bg);border-top:1px solid var(--border);">
+  <div class="section-label">04 — Proyección de riesgos</div>
+  <h2>Lo que podría pasar<br>si <em>nada cambia</em></h2>
+  <p class="section-intro">Basado en tus métricas del wearable y tus exámenes de sangre, cruzados con evidencia clínica. No son predicciones — son probabilidades que tus propios datos ya señalan.</p>
+  <div id="risk-list" class="fade-in"></div>
+</section>
+
+<!-- RECOMENDACIONES -->
+<section id="recomendaciones" style="background:var(--bg2);border-top:1px solid var(--border);">
+  <div class="section-label">05 — Plan de acción</div>
+  <h2>Qué hacer para <em>cambiar</em> el rumbo</h2>
+  <p class="section-intro">Recomendaciones ordenadas por impacto, basadas en lo que tus propios datos muestran como prioridad.</p>
+  <div class="reco-grid fade-in">
+    <div class="reco-card"><div class="reco-hdr"><div class="reco-icon ri-a">🏋️</div><div><div class="reco-title">Entrenamiento de fuerza</div><div class="reco-sub">Impacto № 1</div></div></div><ul class="reco-list"><li>2–3 sesiones de 45 min por semana con pesas o peso corporal.</li><li>El músculo activo consume glucosa pasivamente, reduciendo resistencia a la insulina.</li><li>Protege articulaciones al compensar carga corporal con músculo real.</li><li>Empieza con sentadillas, fondos y peso muerto liviano — 3 series de 10.</li></ul><div class="reco-ft"><span class="reco-ft-label">Mejora en</span><span class="reco-ft-val">IMC · Glucosa · HRV</span></div></div>
+    <div class="reco-card"><div class="reco-hdr"><div class="reco-icon ri-b">🥗</div><div><div class="reco-title">Alimentación sin extremos</div><div class="reco-sub">Déficit moderado</div></div></div><ul class="reco-list"><li>Reducir 300–500 kcal diarias respecto a tu consumo actual.</li><li>Priorizar proteína en cada comida para preservar músculo.</li><li>Eliminar azúcar líquida — mayor impacto sobre el hígado graso.</li><li>0.5 kg/semana de pérdida es sostenible y efectivo a largo plazo.</li></ul><div class="reco-ft"><span class="reco-ft-label">Mejora en</span><span class="reco-ft-val">IMC · NAFLD · Glucosa</span></div></div>
+    <div class="reco-card"><div class="reco-hdr"><div class="reco-icon ri-c">🩸</div><div><div class="reco-title">Exámenes de sangre</div><div class="reco-sub">Lo que el wearable no ve</div></div></div><ul class="reco-list"><li><strong style="color:var(--text)">HbA1c</strong> — detecta prediabetes silenciosa.</li><li><strong style="color:var(--text)">Triglicéridos / HDL</strong> — ratio cercano a 1 indica resistencia a insulina.</li><li><strong style="color:var(--text)">Transaminasas GOT/GPT</strong> — inflamación hepática silenciosa.</li><li>Disponibles gratis en tu CESFAM o consultorio.</li></ul><div class="reco-ft"><span class="reco-ft-label">Detecta</span><span class="reco-ft-val">Diabetes · NAFLD · Riesgo CV</span></div></div>
+    <div class="reco-card"><div class="reco-hdr"><div class="reco-icon ri-d">😴</div><div><div class="reco-title">Sueño consistente</div><div class="reco-sub">Regula el HRV</div></div></div><ul class="reco-list"><li>7–8 horas a horario fijo eleva el HRV en 2–4 semanas.</li><li>Evitar pantallas 30 min antes de dormir.</li><li>Mantener la habitación a 18–20°C mejora la fase profunda.</li><li>El sueño regula el cortisol — hormona que activa almacenamiento de grasa abdominal.</li></ul><div class="reco-ft"><span class="reco-ft-label">Mejora en</span><span class="reco-ft-val">HRV · Cortisol · Recuperación</span></div></div>
+    <div class="reco-card"><div class="reco-hdr"><div class="reco-icon ri-e">📊</div><div><div class="reco-title">Monitoreo continuo</div><div class="reco-sub">Ya tienes el instrumento</div></div></div><ul class="reco-list"><li>Usar el wearable todos los días — FC reposo y HRV requieren datos continuos.</li><li>Revisar métricas cada 4 semanas: VO2max subiendo y FC reposo bajando = vas bien.</li><li>Exportar Apple Health cada 3 meses y cruzar con exámenes de sangre.</li><li>Meta: VO2max sobre 44 y FC reposo bajo 58 en 12 meses.</li></ul><div class="reco-ft"><span class="reco-ft-label">Resultado</span><span class="reco-ft-val">Claridad · Motivación · Control</span></div></div>
+  </div>
+</section>
+
+<!-- CHECKLIST -->
+<section id="checklist" style="background:var(--bg);border-top:1px solid var(--border);">
+  <div class="section-label">06 — Próximos pasos</div>
+  <h2>Tu lista de <em>acción</em></h2>
+  <p class="section-intro">Tareas concretas ordenadas por urgencia. Márcalas a medida que las completes.</p>
+  <div class="cl-wrap fade-in">
+    <div class="cl-group">
+      <div class="cl-gtitle">Esta semana — urgente</div>
+      <div class="cl-item" data-id="c1" onclick="toggleCheck(this)"><div class="cl-chk"><span class="cl-chk-mark">✓</span></div><div class="cl-txt"><div class="cl-title">Pedir hora en el CESFAM para exámenes de sangre</div><div class="cl-sub2">HbA1c, triglicéridos/HDL, transaminasas — gratis en sistema público</div></div><span class="cl-tag t-u">urgente</span></div>
+      <div class="cl-item" data-id="c2" onclick="toggleCheck(this)"><div class="cl-chk"><span class="cl-chk-mark">✓</span></div><div class="cl-txt"><div class="cl-title">Activar registro de sueño en Apple Health</div><div class="cl-sub2">Sin datos de sueño no se puede correlacionar con el HRV bajo</div></div><span class="cl-tag t-u">urgente</span></div>
+      <div class="cl-item" data-id="c3" onclick="toggleCheck(this)"><div class="cl-chk"><span class="cl-chk-mark">✓</span></div><div class="cl-txt"><div class="cl-title">Primera sesión de entrenamiento de fuerza</div><div class="cl-sub2">30–45 min en cualquier lugar — lo importante es empezar el hábito</div></div><span class="cl-tag t-u">urgente</span></div>
+      <div class="cl-item" data-id="c4" onclick="toggleCheck(this)"><div class="cl-chk"><span class="cl-chk-mark">✓</span></div><div class="cl-txt"><div class="cl-title">Definir horario fijo de sueño</div><div class="cl-sub2">El HRV sube visiblemente en 2 semanas con sueño consistente</div></div><span class="cl-tag t-u">urgente</span></div>
+    </div>
+    <div class="cl-group">
+      <div class="cl-gtitle">Hábitos continuos</div>
+      <div class="cl-item" data-id="c5" onclick="toggleCheck(this)"><div class="cl-chk"><span class="cl-chk-mark">✓</span></div><div class="cl-txt"><div class="cl-title">3 sesiones de fuerza completadas esta semana</div><div class="cl-sub2">Lunes / miércoles / viernes o cualquier combinación de días alternos</div></div><span class="cl-tag t-s">semanal</span></div>
+      <div class="cl-item" data-id="c6" onclick="toggleCheck(this)"><div class="cl-chk"><span class="cl-chk-mark">✓</span></div><div class="cl-txt"><div class="cl-title">Mantener promedio de pasos sobre 10.000</div><div class="cl-sub2">La consistencia importa más que los picos</div></div><span class="cl-tag t-d">diario</span></div>
+      <div class="cl-item" data-id="c7" onclick="toggleCheck(this)"><div class="cl-chk"><span class="cl-chk-mark">✓</span></div><div class="cl-txt"><div class="cl-title">Revisar métricas del wearable y anotar tendencias</div><div class="cl-sub2">¿Subió el HRV? ¿Bajó la FC reposo? Nota los cambios</div></div><span class="cl-tag t-s">semanal</span></div>
+      <div class="cl-item" data-id="c8" onclick="toggleCheck(this)"><div class="cl-chk"><span class="cl-chk-mark">✓</span></div><div class="cl-txt"><div class="cl-title">Repetir exámenes de sangre a los 3 meses</div><div class="cl-sub2">Para ver si los cambios de hábito ya son visibles en HbA1c y lípidos</div></div><span class="cl-tag t-m">mensual</span></div>
+    </div>
+  </div>
+  <div style="margin-top:1.25rem;">
+    <div class="cl-prog-bg"><div class="cl-prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="cl-prog-lbl" id="progLbl">0 de 8 completadas — empieza por las urgentes</div>
+  </div>
+</section>
+
+<!-- EXÁMENES -->
+<section id="examenes" style="background:var(--bg2);border-top:1px solid var(--border);" id="examenes">
+  <div class="section-label">07 — Exámenes de laboratorio</div>
+  <h2>Lo que la <em>sangre dice</em></h2>
+  <p class="section-intro">Resultados de laboratorio procesados desde los PDFs. Verde = normal · Amarillo = límite · Rojo = fuera de rango. Las flechas muestran la tendencia entre mediciones.</p>
+  <div id="ex-fechas" class="ex-dates fade-in"></div>
+  <div id="ex-grid" class="ex-grid fade-in"></div>
+</section>
+
+<!-- ANÁLISIS CRUZADO -->
+<section id="cruzado" style="background:var(--bg);border-top:1px solid var(--border);">
+  <div class="section-label">08 — Análisis cruzado</div>
+  <h2>Cuando el wearable y<br>la <em>sangre se cruzan</em></h2>
+  <p class="section-intro">Ninguna fuente por sí sola cuenta toda la historia. Aquí se combinan tus métricas del reloj con tus exámenes de sangre para detectar riesgos que solo aparecen al mirar ambos juntos.</p>
+  <div id="cross-grid" class="cross-grid fade-in"></div>
+</section>
+
+<div class="cta">
+  <h2>La data ya existe.<br>Solo falta <em>actuar.</em></h2>
+  <p>Wearable + exámenes de sangre = imagen completa. Ya tienes ambos. Ahora es momento de actuar.</p>
+  <a href="#checklist" class="btn">Ver checklist →</a>
+</div>
+
+<footer>
+  <span class="fn">BioData_ — Dashboard personal generado automáticamente</span>
+  <span class="fn" id="footer-fecha"></span>
+  <span class="fn">Este análisis no reemplaza diagnóstico médico profesional</span>
+</footer>
+
+<script>
+const P = {"nombre": "Paola Catalan", "fecha_proceso": "28 May 2026, 23:36", "score": 45, "score_rhr": 12, "score_vo2": 7, "score_hrv": 10, "score_steps": 6, "score_cons": 10, "rhr_avg": 65.7, "vo2_avg": 33.9, "hrv_avg": 30.3, "steps_avg": 4723.6, "steps_avg_total": 5359.2, "pct_low_steps": 50, "pct_high_steps": 8, "pct_low_hrv": 47, "hr_avg": 89.3, "active_energy_avg": 130.9, "spo2_avg": 0, "total_registros": 211349, "rango_datos": "2017-11-25 \u2192 2026-05-28"};
+const CD = {"heart_rate": {"dates": ["2024-08-16", "2024-08-17", "2024-08-20", "2024-08-23", "2024-08-24", "2024-08-25", "2024-08-26", "2024-08-28", "2024-08-31", "2024-09-04", "2024-09-05", "2024-09-06", "2024-09-07", "2024-09-08", "2024-09-09", "2024-09-11", "2024-09-14", "2024-09-17", "2024-09-18", "2024-09-20", "2024-09-21", "2024-09-24", "2024-09-25", "2024-09-27", "2024-09-28", "2024-09-29", "2024-09-30", "2024-10-01", "2024-10-02", "2024-10-07", "2024-10-09", "2024-10-11", "2024-10-13", "2024-10-14", "2024-10-15", "2024-10-16", "2024-10-17", "2024-10-18", "2024-10-19", "2024-10-21", "2024-10-22", "2024-10-23", "2024-10-25", "2024-10-26", "2024-10-27", "2024-10-28", "2024-10-30", "2024-10-31", "2024-11-01", "2024-11-02", "2024-11-04", "2024-11-05", "2024-11-06", "2024-11-07", "2024-11-08", "2024-11-09", "2024-11-11", "2024-11-12", "2024-11-13", "2024-11-14", "2024-11-15", "2024-11-16", "2024-11-17", "2024-11-19", "2024-11-20", "2024-11-21", "2024-11-22", "2024-11-23", "2024-11-25", "2024-11-26", "2024-11-27", "2024-11-29", "2024-11-30", "2024-12-02", "2024-12-03", "2024-12-05", "2024-12-09", "2024-12-10", "2024-12-11", "2024-12-13", "2024-12-14", "2024-12-16", "2024-12-17", "2024-12-18", "2024-12-20", "2024-12-21", "2024-12-23", "2024-12-24", "2024-12-25", "2024-12-27", "2024-12-29", "2024-12-30", "2024-12-31", "2025-01-01", "2025-01-03", "2025-01-04", "2025-01-06", "2025-01-07", "2025-01-10", "2025-01-13", "2025-01-15", "2025-01-20", "2025-01-21", "2025-01-22", "2025-01-23", "2025-01-27", "2025-01-28", "2025-01-30", "2025-01-31", "2025-02-01", "2025-02-02", "2025-02-06", "2025-02-07", "2025-02-08", "2025-02-10", "2025-02-12", "2025-02-13", "2025-02-14", "2025-02-17", "2025-02-19", "2025-02-21", "2025-02-25", "2025-02-28", "2025-03-03", "2025-03-04", "2025-03-05", "2025-03-06", "2025-03-07", "2025-03-10", "2025-03-11", "2025-03-12", "2025-03-13", "2025-03-14", "2025-03-15", "2025-03-19", "2025-03-20", "2025-03-21", "2025-03-24", "2025-03-25", "2025-03-26", "2025-03-28", "2025-03-29", "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-04", "2025-04-05", "2025-04-07", "2025-04-09", "2025-04-11", "2025-04-12", "2025-04-14", "2025-04-15", "2025-04-16", "2025-04-17", "2025-04-21", "2025-04-23", "2025-04-25", "2025-04-26", "2025-04-28", "2025-04-29", "2025-04-30", "2025-05-01", "2025-05-02", "2025-05-05", "2025-05-07", "2025-05-08", "2025-05-09", "2025-05-12", "2025-05-13", "2025-05-14", "2025-05-16", "2025-05-19", "2025-05-20", "2025-05-23", "2025-05-24", "2025-05-26", "2025-05-28", "2025-05-29", "2025-05-30", "2025-05-31", "2025-06-04", "2025-06-06", "2025-06-09", "2025-06-10", "2025-06-11", "2025-06-13", "2025-06-14", "2025-06-15", "2025-06-16", "2025-06-18", "2025-06-23", "2025-06-24", "2025-06-25", "2025-06-27", "2025-06-28", "2025-06-30", "2025-07-02", "2025-07-04", "2025-07-05", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-11", "2025-07-12", "2025-07-14", "2025-07-15", "2025-07-17", "2025-07-23", "2025-07-28", "2025-07-30", "2025-08-04", "2025-08-06", "2025-08-08", "2025-08-09", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-18", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-23", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-29", "2025-09-01", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-13", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-22", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-28", "2025-09-29", "2025-09-30", "2025-10-01", "2025-10-02", "2025-10-06", "2025-10-08", "2025-10-09", "2025-10-10", "2025-10-11", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-18", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-10-24", "2025-10-25", "2025-10-27", "2025-10-28", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-06", "2025-11-07", "2025-11-08", "2025-11-10", "2025-11-11", "2025-11-12", "2025-11-13", "2025-11-14", "2025-11-16", "2025-11-17", "2025-11-18", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-22", "2025-11-24", "2025-11-26", "2025-11-28", "2025-11-29", "2025-12-01", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-17", "2025-12-19", "2025-12-20", "2025-12-22", "2025-12-24", "2026-01-18", "2026-01-19", "2026-01-20", "2026-01-26", "2026-01-28", "2026-01-29", "2026-01-30", "2026-01-31", "2026-02-03", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-10", "2026-02-13", "2026-02-14", "2026-02-18", "2026-02-19", "2026-02-20", "2026-02-21", "2026-02-23", "2026-02-25", "2026-02-26", "2026-02-28", "2026-03-02", "2026-03-03", "2026-03-05", "2026-03-06", "2026-03-07", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-21", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-01", "2026-04-02", "2026-04-06", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-13", "2026-04-15", "2026-04-20", "2026-04-24", "2026-04-27", "2026-04-28", "2026-04-30", "2026-05-01", "2026-05-04", "2026-05-06", "2026-05-08", "2026-05-11", "2026-05-15", "2026-05-17", "2026-05-18", "2026-05-20", "2026-05-22", "2026-05-25", "2026-05-27"], "values": [86.9, 93.72, 105.59, 81.21, 98.74, 88.18, 77.61, 98.47, 131.58, 93.85, 78.1, 77.52, 90.65, 95.31, 89.43, 95.09, 77.95, 108.95, 91.87, 85.46, 101.38, 86.18, 98.67, 87.93, 99.66, 76.53, 82.87, 103.7, 87.52, 96.49, 79.98, 73.59, 82.15, 75.7, 102.77, 87.44, 106.64, 80.65, 110.28, 78.45, 78.23, 81.64, 90.95, 99.85, 84.63, 91.11, 87.43, 105.01, 80.86, 90.57, 79.37, 92.15, 85.48, 96.83, 79.33, 108.2, 101.99, 102.25, 79.35, 86.95, 81.73, 92.7, 91.48, 100.16, 97.12, 84.46, 86.42, 106.7, 75.99, 104.12, 73.06, 75.99, 95.78, 75.17, 117.93, 73.85, 92.63, 79.64, 77.7, 86.43, 97.93, 103.9, 88.04, 99.02, 80.34, 103.37, 76.73, 89.07, 101.55, 78.19, 82.84, 77.11, 80.66, 76.18, 101.71, 93.68, 109.09, 64.33, 79.96, 85.55, 79.84, 87.57, 100.51, 76.38, 116.07, 77.37, 87.82, 88.27, 86.66, 92.66, 88.54, 93.79, 98.57, 102.67, 73.85, 77.25, 79.38, 74.99, 79.79, 89.26, 73.65, 76.56, 89.58, 76.96, 113.92, 104.89, 103.0, 74.81, 76.19, 112.98, 89.66, 79.53, 90.56, 124.35, 92.93, 100.5, 83.15, 87.25, 74.8, 89.16, 78.89, 100.24, 74.79, 83.81, 83.85, 95.51, 95.34, 100.48, 77.55, 70.4, 93.3, 101.26, 88.35, 88.6, 73.18, 75.83, 78.44, 87.8, 93.21, 71.36, 77.38, 82.25, 82.11, 90.83, 87.75, 75.69, 76.9, 76.3, 87.6, 74.47, 102.56, 73.9, 104.27, 78.32, 91.89, 80.8, 104.75, 83.01, 84.98, 83.63, 89.0, 101.49, 104.04, 79.42, 86.31, 80.59, 82.8, 100.45, 75.94, 73.5, 79.38, 86.62, 83.38, 52.88, 87.76, 71.81, 103.09, 76.25, 78.23, 86.98, 102.9, 75.68, 96.47, 76.24, 124.87, 120.25, 76.53, 96.61, 86.33, 99.07, 75.63, 80.14, 74.29, 83.84, 102.42, 80.29, 77.33, 92.85, 75.58, 74.91, 77.4, 78.62, 85.1, 110.49, 94.62, 91.24, 83.31, 91.83, 75.47, 77.14, 85.75, 81.04, 92.65, 80.47, 109.86, 85.6, 112.73, 81.07, 103.58, 98.62, 82.6, 76.88, 100.99, 75.92, 82.89, 74.39, 109.27, 76.16, 94.38, 84.5, 114.8, 89.54, 93.69, 119.03, 74.14, 92.66, 69.63, 95.75, 82.92, 103.56, 74.15, 83.58, 89.7, 98.95, 94.73, 77.76, 91.05, 71.0, 80.12, 80.55, 75.37, 90.46, 97.15, 82.57, 79.26, 94.18, 73.93, 98.92, 77.47, 101.19, 79.93, 106.13, 80.29, 98.34, 73.69, 104.29, 78.67, 74.02, 85.53, 101.7, 88.14, 77.22, 100.44, 72.81, 96.35, 76.19, 79.39, 82.94, 95.61, 92.0, 101.87, 82.57, 77.72, 83.0, 83.0, 73.17, 93.18, 83.85, 84.52, 77.71, 82.55, 111.41, 79.67, 78.28, 76.38, 112.51, 90.84, 117.4, 78.59, 97.45, 124.19, 100.0, 81.64, 74.91, 128.55, 78.97, 96.19, 93.45, 121.72, 80.43, 85.88, 80.04, 88.95, 82.63, 76.27, 125.47, 92.14, 79.18, 97.57, 86.15, 116.16, 98.07, 78.59, 115.96, 78.1, 126.51, 80.65, 98.17, 93.52, 94.69, 95.2, 97.29, 85.37, 85.41, 99.32, 93.2, 89.75, 79.53, 80.59, 97.99, 77.31, 89.23, 82.78, 89.52, 99.48]}, "resting_hr": {"dates": ["2024-06-08", "2024-06-09", "2024-06-10", "2024-06-14", "2024-06-15", "2024-06-26", "2024-06-27", "2024-07-01", "2024-07-02", "2024-07-03", "2024-07-05", "2024-07-10", "2024-07-12", "2024-07-26", "2024-07-27", "2024-08-13", "2024-08-14", "2024-08-16", "2024-08-17", "2024-08-25", "2024-08-28", "2024-09-04", "2024-09-05", "2024-09-06", "2024-09-07", "2024-09-08", "2024-09-09", "2024-09-20", "2024-09-24", "2024-09-25", "2024-09-27", "2024-09-28", "2024-09-29", "2024-09-30", "2024-10-02", "2024-10-11", "2024-10-13", "2024-10-14", "2024-10-16", "2024-10-18", "2024-10-19", "2024-10-21", "2024-10-22", "2024-10-23", "2024-10-25", "2024-10-28", "2024-10-30", "2024-10-31", "2024-11-04", "2024-11-05", "2024-11-06", "2024-11-07", "2024-11-08", "2024-11-11", "2024-11-13", "2024-11-14", "2024-11-15", "2024-11-16", "2024-11-19", "2024-11-20", "2024-11-21", "2024-11-22", "2024-11-25", "2024-11-29", "2024-11-30", "2024-12-02", "2024-12-03", "2024-12-09", "2024-12-10", "2024-12-11", "2024-12-13", "2024-12-14", "2024-12-16", "2024-12-17", "2024-12-18", "2024-12-20", "2024-12-21", "2024-12-23", "2024-12-27", "2024-12-30", "2024-12-31", "2025-01-03", "2025-01-04", "2025-01-06", "2025-01-13", "2025-01-15", "2025-01-20", "2025-01-21", "2025-01-22", "2025-01-28", "2025-01-30", "2025-02-01", "2025-02-06", "2025-02-07", "2025-02-10", "2025-02-12", "2025-02-13", "2025-02-17", "2025-02-19", "2025-02-21", "2025-02-25", "2025-02-28", "2025-03-03", "2025-03-05", "2025-03-10", "2025-03-12", "2025-03-13", "2025-03-14", "2025-03-19", "2025-03-20", "2025-03-21", "2025-03-24", "2025-03-26", "2025-03-28", "2025-03-29", "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-04", "2025-04-05", "2025-04-07", "2025-04-09", "2025-04-11", "2025-04-12", "2025-04-14", "2025-04-15", "2025-04-16", "2025-04-17", "2025-04-21", "2025-04-23", "2025-04-25", "2025-04-28", "2025-04-29", "2025-04-30", "2025-05-02", "2025-05-05", "2025-05-07", "2025-05-08", "2025-05-09", "2025-05-12", "2025-05-14", "2025-05-16", "2025-05-19", "2025-05-23", "2025-05-24", "2025-05-26", "2025-05-28", "2025-05-30", "2025-06-06", "2025-06-09", "2025-06-10", "2025-06-14", "2025-06-16", "2025-06-18", "2025-06-23", "2025-06-25", "2025-06-27", "2025-06-28", "2025-06-30", "2025-07-02", "2025-07-04", "2025-07-07", "2025-07-09", "2025-07-11", "2025-07-14", "2025-07-15", "2025-07-17", "2025-07-28", "2025-07-30", "2025-08-04", "2025-08-06", "2025-08-08", "2025-08-11", "2025-08-13", "2025-08-18", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-25", "2025-08-26", "2025-08-29", "2025-09-01", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-10", "2025-09-12", "2025-09-15", "2025-09-17", "2025-09-22", "2025-09-24", "2025-09-29", "2025-10-01", "2025-10-02", "2025-10-06", "2025-10-08", "2025-10-09", "2025-10-10", "2025-10-11", "2025-10-13", "2025-10-17", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-25", "2025-10-27", "2025-11-03", "2025-11-05", "2025-11-07", "2025-11-10", "2025-11-12", "2025-11-14", "2025-11-16", "2025-11-17", "2025-11-21", "2025-11-22", "2025-11-24", "2025-11-26", "2025-11-28", "2025-12-01", "2025-12-03", "2025-12-17", "2025-12-19", "2025-12-20", "2025-12-22", "2025-12-24", "2026-01-26", "2026-01-28", "2026-01-30", "2026-02-03", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-13", "2026-02-18", "2026-02-20", "2026-02-21", "2026-02-23", "2026-02-25", "2026-03-02", "2026-03-03", "2026-03-06", "2026-03-09", "2026-03-11", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-04-01", "2026-04-02", "2026-04-06", "2026-04-08", "2026-04-10", "2026-04-13", "2026-04-15", "2026-04-27", "2026-04-30", "2026-05-01", "2026-05-04", "2026-05-06", "2026-05-08", "2026-05-11", "2026-05-18", "2026-05-20", "2026-05-22", "2026-05-25", "2026-05-27"], "values": [82.0, 72.0, 68.0, 73.0, 71.0, 64.0, 78.0, 76.0, 74.0, 72.0, 68.0, 66.0, 68.0, 68.0, 62.0, 66.0, 69.0, 66.0, 68.0, 65.0, 70.0, 71.0, 69.0, 64.0, 66.0, 72.5, 63.0, 67.5, 74.0, 63.0, 76.0, 78.0, 73.0, 64.0, 58.0, 61.0, 79.0, 64.0, 58.0, 65.0, 68.0, 67.0, 69.0, 65.0, 60.0, 62.0, 71.0, 78.0, 74.0, 79.0, 62.0, 66.0, 70.0, 60.0, 65.0, 73.0, 64.0, 62.0, 74.0, 74.0, 69.0, 74.0, 59.0, 68.0, 59.0, 67.0, 80.0, 66.0, 57.0, 67.0, 67.0, 61.0, 66.0, 70.0, 75.0, 74.0, 76.0, 56.0, 72.0, 55.0, 72.0, 69.0, 82.0, 78.0, 60.0, 57.0, 65.0, 79.0, 63.0, 74.0, 68.5, 58.0, 63.0, 65.0, 59.0, 53.0, 68.0, 62.0, 66.0, 52.0, 58.0, 71.0, 56.0, 68.0, 62.0, 60.0, 75.0, 72.0, 66.0, 79.0, 61.0, 66.0, 66.0, 55.0, 62.0, 67.0, 66.0, 60.0, 54.0, 66.0, 82.0, 67.0, 67.0, 72.0, 66.0, 62.0, 69.0, 65.0, 71.0, 62.0, 59.0, 72.0, 56.0, 65.0, 58.0, 65.0, 62.0, 61.0, 63.0, 65.0, 69.0, 63.0, 66.0, 59.0, 59.0, 76.0, 60.0, 63.0, 70.0, 65.0, 67.0, 74.0, 60.0, 72.0, 77.0, 69.0, 60.0, 68.0, 58.0, 62.0, 68.0, 71.0, 60.0, 67.0, 70.0, 73.0, 76.0, 59.0, 61.0, 60.0, 61.0, 72.0, 55.0, 68.0, 60.0, 62.0, 58.0, 67.0, 64.0, 67.0, 70.0, 69.0, 58.0, 66.0, 67.0, 69.0, 66.0, 60.0, 81.0, 59.0, 58.0, 60.0, 71.0, 59.0, 58.0, 61.0, 61.0, 69.0, 64.0, 67.0, 81.0, 60.0, 66.0, 54.0, 75.0, 67.0, 59.0, 67.0, 58.0, 67.0, 57.0, 68.0, 64.0, 69.0, 79.0, 65.0, 68.0, 69.0, 59.0, 67.0, 66.0, 66.0, 73.0, 62.0, 49.0, 60.0, 72.0, 74.0, 66.0, 61.0, 68.0, 61.0, 67.0, 60.0, 63.0, 70.5, 66.0, 70.0, 77.0, 65.0, 67.0, 63.0, 65.0, 70.0, 57.0, 61.0, 65.0, 69.0, 60.0, 61.0, 73.0, 61.0, 71.0, 56.0, 73.0, 64.0, 69.0, 62.0, 64.0, 67.0, 73.0, 65.0, 71.0, 78.0, 70.0, 68.0, 66.0, 75.0, 64.0, 59.0]}, "hrv": {"dates": ["2024-06-08", "2024-06-09", "2024-06-10", "2024-06-11", "2024-06-14", "2024-06-15", "2024-06-18", "2024-06-26", "2024-06-27", "2024-07-01", "2024-07-02", "2024-07-03", "2024-07-05", "2024-07-10", "2024-07-12", "2024-07-26", "2024-07-27", "2024-08-02", "2024-08-05", "2024-08-13", "2024-08-14", "2024-08-16", "2024-08-17", "2024-08-23", "2024-08-25", "2024-08-26", "2024-08-28", "2024-09-04", "2024-09-05", "2024-09-06", "2024-09-07", "2024-09-08", "2024-09-09", "2024-09-14", "2024-09-17", "2024-09-18", "2024-09-20", "2024-09-21", "2024-09-24", "2024-09-25", "2024-09-27", "2024-09-28", "2024-09-29", "2024-09-30", "2024-10-01", "2024-10-02", "2024-10-07", "2024-10-09", "2024-10-11", "2024-10-13", "2024-10-14", "2024-10-15", "2024-10-16", "2024-10-18", "2024-10-19", "2024-10-21", "2024-10-22", "2024-10-23", "2024-10-25", "2024-10-26", "2024-10-28", "2024-10-30", "2024-10-31", "2024-11-04", "2024-11-05", "2024-11-06", "2024-11-07", "2024-11-08", "2024-11-09", "2024-11-11", "2024-11-12", "2024-11-13", "2024-11-14", "2024-11-15", "2024-11-16", "2024-11-19", "2024-11-20", "2024-11-21", "2024-11-22", "2024-11-25", "2024-11-27", "2024-11-29", "2024-11-30", "2024-12-02", "2024-12-03", "2024-12-05", "2024-12-09", "2024-12-10", "2024-12-11", "2024-12-13", "2024-12-14", "2024-12-16", "2024-12-17", "2024-12-18", "2024-12-20", "2024-12-21", "2024-12-23", "2024-12-24", "2024-12-27", "2024-12-29", "2024-12-30", "2024-12-31", "2025-01-01", "2025-01-03", "2025-01-04", "2025-01-06", "2025-01-10", "2025-01-13", "2025-01-15", "2025-01-20", "2025-01-21", "2025-01-22", "2025-01-27", "2025-01-28", "2025-01-30", "2025-01-31", "2025-02-01", "2025-02-02", "2025-02-06", "2025-02-07", "2025-02-08", "2025-02-10", "2025-02-12", "2025-02-13", "2025-02-14", "2025-02-17", "2025-02-19", "2025-02-21", "2025-02-25", "2025-02-28", "2025-03-03", "2025-03-05", "2025-03-07", "2025-03-10", "2025-03-11", "2025-03-12", "2025-03-13", "2025-03-14", "2025-03-19", "2025-03-20", "2025-03-21", "2025-03-24", "2025-03-25", "2025-03-26", "2025-03-28", "2025-03-29", "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-04", "2025-04-05", "2025-04-07", "2025-04-09", "2025-04-11", "2025-04-12", "2025-04-14", "2025-04-15", "2025-04-16", "2025-04-17", "2025-04-21", "2025-04-23", "2025-04-25", "2025-04-26", "2025-04-28", "2025-04-29", "2025-04-30", "2025-05-02", "2025-05-05", "2025-05-07", "2025-05-08", "2025-05-09", "2025-05-12", "2025-05-14", "2025-05-16", "2025-05-19", "2025-05-20", "2025-05-23", "2025-05-24", "2025-05-26", "2025-05-28", "2025-05-29", "2025-05-30", "2025-05-31", "2025-06-04", "2025-06-06", "2025-06-09", "2025-06-10", "2025-06-13", "2025-06-14", "2025-06-16", "2025-06-18", "2025-06-23", "2025-06-25", "2025-06-27", "2025-06-28", "2025-06-30", "2025-07-02", "2025-07-04", "2025-07-05", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-11", "2025-07-12", "2025-07-14", "2025-07-15", "2025-07-17", "2025-07-23", "2025-07-28", "2025-07-30", "2025-08-04", "2025-08-06", "2025-08-09", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-18", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-23", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-29", "2025-09-01", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-10", "2025-09-12", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-22", "2025-09-24", "2025-09-25", "2025-09-28", "2025-09-29", "2025-10-01", "2025-10-02", "2025-10-06", "2025-10-08", "2025-10-09", "2025-10-10", "2025-10-11", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-18", "2025-10-21", "2025-10-22", "2025-10-24", "2025-10-25", "2025-10-27", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-07", "2025-11-10", "2025-11-12", "2025-11-16", "2025-11-17", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-22", "2025-11-24", "2025-11-26", "2025-11-28", "2025-11-29", "2025-12-01", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-17", "2025-12-19", "2025-12-20", "2025-12-22", "2025-12-24", "2026-01-26", "2026-01-28", "2026-01-29", "2026-01-30", "2026-02-03", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-10", "2026-02-13", "2026-02-14", "2026-02-18", "2026-02-21", "2026-02-23", "2026-02-25", "2026-03-02", "2026-03-03", "2026-03-06", "2026-03-07", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-21", "2026-03-27", "2026-03-31", "2026-04-01", "2026-04-02", "2026-04-06", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-13", "2026-04-15", "2026-04-20", "2026-04-27", "2026-04-28", "2026-04-30", "2026-05-01", "2026-05-04", "2026-05-06", "2026-05-08", "2026-05-11", "2026-05-18", "2026-05-20", "2026-05-22", "2026-05-25", "2026-05-27"], "values": [24.41, 31.98, 34.98, 30.88, 26.8, 35.94, 41.37, 30.98, 56.6, 27.87, 26.71, 32.24, 29.34, 32.29, 25.31, 26.85, 27.58, 43.19, 23.87, 31.87, 34.54, 30.62, 46.35, 37.65, 38.01, 29.85, 30.2, 26.73, 29.58, 30.98, 40.92, 35.83, 44.32, 34.28, 34.21, 30.96, 32.66, 26.49, 20.37, 34.89, 33.43, 29.19, 31.9, 24.75, 17.25, 29.88, 38.6, 24.34, 22.67, 26.05, 24.38, 31.76, 32.4, 31.39, 31.37, 27.98, 31.87, 37.13, 29.87, 19.39, 23.78, 34.91, 33.23, 28.57, 10.53, 23.0, 20.82, 28.55, 21.18, 16.18, 29.08, 23.87, 25.94, 34.64, 26.86, 39.43, 32.98, 34.02, 28.09, 30.39, 27.93, 36.7, 23.89, 38.47, 27.2, 27.52, 29.89, 34.18, 34.03, 36.24, 25.97, 34.17, 27.28, 36.45, 35.07, 26.55, 51.69, 30.71, 28.21, 44.43, 28.62, 27.29, 31.61, 47.68, 17.74, 16.02, 77.55, 31.63, 35.92, 29.57, 25.03, 30.19, 38.02, 37.61, 28.74, 39.4, 36.44, 19.75, 45.84, 34.25, 3.67, 32.61, 36.39, 24.08, 35.41, 48.3, 27.37, 30.07, 45.09, 28.01, 36.54, 41.66, 59.57, 43.72, 16.72, 29.72, 27.37, 32.17, 27.53, 28.38, 43.7, 37.35, 34.47, 31.19, 48.04, 30.58, 42.21, 35.24, 36.46, 32.29, 26.05, 22.12, 36.38, 31.26, 28.83, 31.17, 29.86, 33.82, 30.09, 25.44, 42.47, 30.75, 32.98, 18.3, 47.65, 29.61, 36.21, 27.9, 32.26, 45.56, 34.51, 49.61, 30.98, 28.38, 33.73, 60.61, 29.96, 26.66, 29.71, 32.69, 36.26, 15.87, 31.0, 21.28, 17.13, 35.13, 37.51, 11.72, 50.61, 26.79, 28.85, 43.01, 39.96, 38.62, 26.97, 23.59, 31.87, 31.6, 37.75, 25.3, 21.93, 28.61, 39.71, 25.01, 26.39, 40.92, 30.58, 34.95, 30.12, 33.72, 20.84, 30.05, 19.76, 29.02, 29.79, 20.85, 28.06, 36.69, 23.83, 34.58, 28.96, 21.34, 40.46, 32.39, 38.87, 29.69, 35.96, 31.99, 27.46, 28.82, 30.63, 37.46, 18.65, 33.81, 28.73, 32.56, 27.91, 33.63, 19.95, 28.44, 33.13, 39.56, 33.8, 21.59, 42.34, 29.14, 25.87, 22.84, 29.79, 33.39, 27.66, 23.27, 26.87, 27.86, 29.01, 32.16, 24.04, 26.76, 20.85, 46.74, 29.69, 24.04, 32.2, 26.76, 34.57, 25.02, 32.14, 31.84, 32.2, 45.07, 33.69, 40.24, 30.65, 18.91, 42.82, 31.18, 53.25, 26.35, 29.04, 32.37, 42.42, 21.05, 28.56, 39.76, 37.65, 28.47, 24.7, 45.65, 54.85, 21.41, 24.15, 68.32, 21.59, 31.27, 11.76, 21.61, 21.06, 41.21, 17.79, 36.57, 33.51, 34.36, 25.34, 33.43, 25.98, 36.09, 29.13, 27.96, 22.94, 27.58, 35.99, 30.2, 12.78, 24.25, 27.63, 31.03, 30.57, 24.31, 26.94, 41.2, 31.19, 21.42, 42.48, 30.23, 26.8, 10.61, 23.89, 19.08, 31.37, 27.96, 41.53, 41.66, 28.37, 37.91, 19.99, 23.52, 28.16]}, "vo2max": {"dates": ["2024-07-05", "2024-07-12", "2024-07-16", "2024-07-21", "2024-09-25", "2024-10-07", "2024-10-16", "2025-01-06", "2025-01-20", "2025-02-07", "2025-02-19", "2025-03-05", "2025-05-02", "2025-05-16", "2025-07-04", "2025-08-08", "2025-08-26", "2025-09-04", "2025-09-22", "2025-10-22", "2025-11-07", "2025-11-16", "2025-12-01", "2026-04-06", "2026-04-15", "2026-05-04", "2026-05-27"], "values": [37.86, 38.06, 37.71, 37.6, 36.81, 36.53, 36.1, 31.61, 32.27, 30.63, 31.72, 31.58, 35.76, 32.58, 31.99, 31.76, 32.15, 31.92, 32.99, 33.82, 33.78, 33.4, 33.46, 33.4, 33.11, 33.2, 32.15]}, "steps": {"dates": ["2025-05-29", "2025-05-30", "2025-05-31", "2025-06-01", "2025-06-02", "2025-06-03", "2025-06-04", "2025-06-05", "2025-06-06", "2025-06-07", "2025-06-08", "2025-06-09", "2025-06-10", "2025-06-11", "2025-06-12", "2025-06-13", "2025-06-14", "2025-06-15", "2025-06-16", "2025-06-17", "2025-06-18", "2025-06-19", "2025-06-20", "2025-06-21", "2025-06-22", "2025-06-23", "2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-28", "2025-06-29", "2025-06-30", "2025-07-01", "2025-07-02", "2025-07-03", "2025-07-04", "2025-07-05", "2025-07-06", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11", "2025-07-12", "2025-07-13", "2025-07-14", "2025-07-15", "2025-07-16", "2025-07-17", "2025-07-18", "2025-07-19", "2025-07-20", "2025-07-21", "2025-07-22", "2025-07-23", "2025-07-24", "2025-07-25", "2025-07-26", "2025-07-27", "2025-07-28", "2025-07-29", "2025-07-30", "2025-07-31", "2025-08-01", "2025-08-02", "2025-08-03", "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08", "2025-08-09", "2025-08-10", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-14", "2025-08-15", "2025-08-16", "2025-08-17", "2025-08-18", "2025-08-19", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-23", "2025-08-24", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-28", "2025-08-29", "2025-08-30", "2025-08-31", "2025-09-01", "2025-09-02", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-06", "2025-09-07", "2025-09-08", "2025-09-09", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-13", "2025-09-14", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-18", "2025-09-19", "2025-09-20", "2025-09-21", "2025-09-22", "2025-09-23", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-27", "2025-09-28", "2025-09-29", "2025-09-30", "2025-10-01", "2025-10-02", "2025-10-03", "2025-10-04", "2025-10-05", "2025-10-06", "2025-10-07", "2025-10-08", "2025-10-09", "2025-10-10", "2025-10-11", "2025-10-12", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-18", "2025-10-19", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-10-24", "2025-10-25", "2025-10-26", "2025-10-27", "2025-10-28", "2025-10-29", "2025-10-30", "2025-10-31", "2025-11-01", "2025-11-02", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-06", "2025-11-07", "2025-11-08", "2025-11-09", "2025-11-10", "2025-11-11", "2025-11-12", "2025-11-13", "2025-11-14", "2025-11-15", "2025-11-16", "2025-11-17", "2025-11-18", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-22", "2025-11-23", "2025-11-24", "2025-11-25", "2025-11-26", "2025-11-27", "2025-11-28", "2025-11-29", "2025-11-30", "2025-12-01", "2025-12-02", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-06", "2025-12-07", "2025-12-08", "2025-12-09", "2025-12-10", "2025-12-11", "2025-12-12", "2025-12-13", "2025-12-14", "2025-12-15", "2025-12-16", "2025-12-17", "2025-12-18", "2025-12-19", "2025-12-20", "2025-12-21", "2025-12-22", "2025-12-23", "2025-12-24", "2025-12-25", "2025-12-26", "2025-12-27", "2025-12-28", "2025-12-29", "2025-12-30", "2025-12-31", "2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04", "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09", "2026-01-10", "2026-01-11", "2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15", "2026-01-16", "2026-01-17", "2026-01-18", "2026-01-19", "2026-01-20", "2026-01-21", "2026-01-22", "2026-01-23", "2026-01-24", "2026-01-25", "2026-01-26", "2026-01-27", "2026-01-28", "2026-01-29", "2026-01-30", "2026-01-31", "2026-02-01", "2026-02-02", "2026-02-03", "2026-02-04", "2026-02-05", "2026-02-06", "2026-02-07", "2026-02-08", "2026-02-09", "2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-14", "2026-02-15", "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20", "2026-02-21", "2026-02-22", "2026-02-23", "2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-02-28", "2026-03-01", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-07", "2026-03-08", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-14", "2026-03-15", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-21", "2026-03-22", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-28", "2026-03-29", "2026-03-30", "2026-03-31", "2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-12", "2026-04-13", "2026-04-14", "2026-04-15", "2026-04-16", "2026-04-17", "2026-04-18", "2026-04-19", "2026-04-20", "2026-04-21", "2026-04-22", "2026-04-23", "2026-04-24", "2026-04-25", "2026-04-26", "2026-04-27", "2026-04-28", "2026-04-29", "2026-04-30", "2026-05-01", "2026-05-02", "2026-05-03", "2026-05-04", "2026-05-05", "2026-05-06", "2026-05-07", "2026-05-08", "2026-05-09", "2026-05-10", "2026-05-11", "2026-05-12", "2026-05-13", "2026-05-14", "2026-05-15", "2026-05-16", "2026-05-17", "2026-05-18", "2026-05-19", "2026-05-20", "2026-05-21", "2026-05-22", "2026-05-23", "2026-05-24", "2026-05-25", "2026-05-26", "2026-05-27", "2026-05-28"], "values": [4246.0, 8890.0, 13356.0, 877.0, 1683.0, 2161.0, 7443.0, 234.0, 11881.0, 4555.0, 6036.0, 12038.0, 4152.0, 1869.0, 2840.0, 12475.0, 6052.0, 4883.0, 4442.0, 907.0, 5426.0, 216.0, 7644.0, 188.0, 6365.0, 6253.0, 3618.0, 11008.0, 287.0, 3373.0, 13285.0, 4099.0, 4049.0, 3140.0, 5314.0, 1426.0, 9993.0, 14200.0, 3221.0, 3806.0, 7409.0, 5355.0, 151.0, 15801.0, 8098.0, 3338.0, 3563.0, 3523.0, 4464.0, 8807.0, 4451.0, 3298.0, 4268.0, 6174.0, 5255.0, 6849.0, 1359.0, 3375.0, 5898.0, 3992.0, 4767.0, 3385.0, 5934.0, 1491.0, 5550.0, 7802.0, 5550.0, 4892.0, 1454.0, 5540.0, 4355.0, 9185.0, 8283.0, 3962.0, 6011.0, 3528.0, 1671.0, 3409.0, 5398.0, 7321.0, 961.0, 4930.0, 1375.0, 5446.0, 3502.0, 12797.0, 9497.0, 7123.0, 6688.0, 9597.0, 5069.0, 1748.0, 16619.0, 2951.0, 5916.0, 5646.0, 4094.0, 5109.0, 10305.0, 9462.0, 4423.0, 5663.0, 6693.0, 1375.0, 4125.0, 5843.0, 5273.0, 8010.0, 7546.0, 5957.0, 6927.0, 8955.0, 6240.0, 1927.0, 2701.0, 8108.0, 9322.0, 3207.0, 4696.0, 7822.0, 3392.0, 5710.0, 9152.0, 8639.0, 6104.0, 5316.0, 7504.0, 5764.0, 6711.0, 5995.0, 5445.0, 5006.0, 8215.0, 8159.0, 11103.0, 10502.0, 6753.0, 5738.0, 5617.0, 1924.0, 9162.0, 6206.0, 11241.0, 2578.0, 4008.0, 4551.0, 8383.0, 9674.0, 13429.0, 5035.0, 6207.0, 9648.0, 2559.0, 6546.0, 6327.0, 3528.0, 6892.0, 7823.0, 7835.0, 1362.0, 3624.0, 915.0, 11248.0, 6140.0, 5997.0, 5856.0, 8169.0, 3683.0, 10173.0, 7425.0, 7404.0, 14349.0, 16262.0, 9399.0, 7141.0, 7361.0, 7787.0, 9848.0, 3677.0, 6831.0, 4351.0, 7777.0, 4066.0, 5747.0, 8148.0, 3972.0, 13255.0, 3986.0, 3445.0, 11946.0, 7422.0, 3809.0, 5575.0, 5534.0, 7388.0, 7971.0, 3697.0, 692.0, 2233.0, 4999.0, 3614.0, 1999.0, 8547.0, 2940.0, 5647.0, 7521.0, 3309.0, 13159.0, 2688.0, 9289.0, 4663.0, 1718.0, 4128.0, 1716.0, 3980.0, 2367.0, 4633.0, 1964.0, 6795.0, 2889.0, 2642.0, 3305.0, 2559.0, 2608.0, 2450.0, 2662.0, 3627.0, 2884.0, 4183.0, 3117.0, 7047.0, 3100.0, 1796.0, 4255.0, 408.0, 4993.0, 8097.0, 1576.0, 2339.0, 3779.0, 2532.0, 1587.0, 4810.0, 735.0, 8878.0, 5361.0, 3581.0, 5628.0, 3729.0, 2299.0, 3809.0, 1559.0, 7384.0, 5547.0, 3505.0, 1196.0, 5756.0, 7734.0, 4212.0, 4277.0, 9217.0, 6594.0, 4871.0, 1281.0, 3001.0, 5757.0, 5479.0, 6878.0, 5663.0, 3208.0, 7645.0, 2474.0, 11586.0, 7143.0, 1940.0, 2562.0, 3804.0, 7408.0, 8721.0, 1182.0, 6276.0, 3934.0, 8143.0, 1179.0, 8043.0, 4870.0, 4662.0, 3007.0, 1619.0, 1328.0, 3477.0, 6778.0, 4363.0, 5825.0, 6210.0, 4058.0, 4006.0, 7971.0, 2679.0, 1144.0, 1545.0, 2323.0, 7459.0, 2774.0, 5675.0, 3881.0, 5932.0, 7544.0, 8465.0, 4397.0, 2777.0, 3507.0, 9017.0, 1610.0, 7522.0, 8749.0, 3056.0, 6793.0, 4566.0, 5965.0, 1300.0, 11005.0, 1040.0, 2908.0, 2890.0, 9405.0, 12143.0, 1136.0, 10297.0, 2573.0, 3339.0, 1643.0, 3349.0, 8326.0, 4053.0, 950.0, 7879.0, 2567.0, 3264.0, 1300.0, 9507.0, 423.0, 10212.0, 1990.0, 10515.0, 1605.0, 3748.0, 6785.0, 756.0, 7190.0, 1055.0, 6639.0, 2742.0, 9807.0, 6816.0, 1122.0, 9360.0, 2280.0, 4364.0, 1818.0, 2678.0, 8134.0, 831.0, 5718.0, 859.0]}, "active_energy": {"dates": ["2024-10-02", "2024-10-07", "2024-10-08", "2024-10-09", "2024-10-10", "2024-10-11", "2024-10-12", "2024-10-13", "2024-10-14", "2024-10-15", "2024-10-16", "2024-10-17", "2024-10-18", "2024-10-19", "2024-10-21", "2024-10-22", "2024-10-23", "2024-10-24", "2024-10-25", "2024-10-26", "2024-10-27", "2024-10-28", "2024-10-30", "2024-10-31", "2024-11-01", "2024-11-02", "2024-11-04", "2024-11-05", "2024-11-06", "2024-11-07", "2024-11-08", "2024-11-09", "2024-11-11", "2024-11-12", "2024-11-13", "2024-11-14", "2024-11-15", "2024-11-16", "2024-11-17", "2024-11-18", "2024-11-19", "2024-11-20", "2024-11-21", "2024-11-22", "2024-11-23", "2024-11-25", "2024-11-26", "2024-11-29", "2024-11-30", "2024-12-02", "2024-12-03", "2024-12-05", "2024-12-09", "2024-12-10", "2024-12-11", "2024-12-13", "2024-12-14", "2024-12-16", "2024-12-17", "2024-12-18", "2024-12-20", "2024-12-21", "2024-12-24", "2024-12-25", "2024-12-27", "2024-12-29", "2024-12-30", "2024-12-31", "2025-01-01", "2025-01-03", "2025-01-04", "2025-01-06", "2025-01-07", "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-20", "2025-01-21", "2025-01-22", "2025-01-23", "2025-01-27", "2025-01-28", "2025-01-29", "2025-01-30", "2025-01-31", "2025-02-01", "2025-02-02", "2025-02-06", "2025-02-07", "2025-02-08", "2025-02-09", "2025-02-10", "2025-02-12", "2025-02-13", "2025-02-14", "2025-02-15", "2025-02-17", "2025-02-19", "2025-02-21", "2025-02-25", "2025-02-28", "2025-03-03", "2025-03-04", "2025-03-05", "2025-03-06", "2025-03-10", "2025-03-11", "2025-03-12", "2025-03-13", "2025-03-14", "2025-03-15", "2025-03-19", "2025-03-20", "2025-03-21", "2025-03-24", "2025-03-25", "2025-03-26", "2025-03-27", "2025-03-28", "2025-03-29", "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-04", "2025-04-05", "2025-04-07", "2025-04-08", "2025-04-09", "2025-04-11", "2025-04-12", "2025-04-14", "2025-04-15", "2025-04-16", "2025-04-17", "2025-04-21", "2025-04-23", "2025-04-25", "2025-04-26", "2025-04-28", "2025-04-29", "2025-04-30", "2025-05-01", "2025-05-02", "2025-05-03", "2025-05-05", "2025-05-07", "2025-05-08", "2025-05-09", "2025-05-12", "2025-05-13", "2025-05-14", "2025-05-16", "2025-05-19", "2025-05-20", "2025-05-21", "2025-05-23", "2025-05-24", "2025-05-26", "2025-05-28", "2025-05-29", "2025-05-30", "2025-05-31", "2025-06-04", "2025-06-06", "2025-06-09", "2025-06-10", "2025-06-11", "2025-06-13", "2025-06-14", "2025-06-15", "2025-06-16", "2025-06-17", "2025-06-18", "2025-06-23", "2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-28", "2025-06-30", "2025-07-02", "2025-07-04", "2025-07-05", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11", "2025-07-12", "2025-07-14", "2025-07-15", "2025-07-17", "2025-07-23", "2025-07-28", "2025-07-30", "2025-08-04", "2025-08-06", "2025-08-07", "2025-08-08", "2025-08-09", "2025-08-10", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-18", "2025-08-19", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-23", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-29", "2025-09-01", "2025-09-02", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-13", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-22", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-27", "2025-09-28", "2025-09-29", "2025-09-30", "2025-10-01", "2025-10-02", "2025-10-06", "2025-10-07", "2025-10-08", "2025-10-09", "2025-10-10", "2025-10-11", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-18", "2025-10-19", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-10-24", "2025-10-25", "2025-10-27", "2025-10-28", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-06", "2025-11-07", "2025-11-08", "2025-11-10", "2025-11-11", "2025-11-12", "2025-11-13", "2025-11-14", "2025-11-16", "2025-11-17", "2025-11-18", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-22", "2025-11-24", "2025-11-26", "2025-11-27", "2025-11-28", "2025-11-29", "2025-12-01", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-17", "2025-12-19", "2025-12-20", "2025-12-22", "2025-12-24", "2026-01-18", "2026-01-19", "2026-01-20", "2026-01-26", "2026-01-28", "2026-01-29", "2026-01-30", "2026-01-31", "2026-02-03", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-10", "2026-02-13", "2026-02-14", "2026-02-18", "2026-02-19", "2026-02-20", "2026-02-21", "2026-02-23", "2026-02-24", "2026-02-25", "2026-02-26", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-07", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-21", "2026-03-27", "2026-03-28", "2026-03-30", "2026-03-31", "2026-04-01", "2026-04-02", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-11", "2026-04-13", "2026-04-14", "2026-04-15", "2026-04-20", "2026-04-21", "2026-04-24", "2026-04-27", "2026-04-28", "2026-04-30", "2026-05-01", "2026-05-04", "2026-05-06", "2026-05-08", "2026-05-09", "2026-05-11", "2026-05-15", "2026-05-17", "2026-05-18", "2026-05-19", "2026-05-20", "2026-05-22", "2026-05-25", "2026-05-27"], "values": [397.02, 212.28, 4.44, 108.83, 7.27, 314.57, 0.22, 117.3, 28.45, 297.34, 405.02, 214.85, 177.04, 418.55, 234.97, 167.3, 375.39, 3.24, 283.77, 447.87, 164.26, 376.5, 265.2, 280.03, 18.12, 327.57, 108.16, 203.22, 241.08, 112.95, 135.54, 499.7, 237.03, 216.58, 118.47, 190.75, 358.0, 503.5, 105.53, 7.43, 242.25, 256.93, 249.22, 260.11, 150.8, 262.66, 232.69, 123.21, 334.25, 102.68, 243.57, 42.78, 255.21, 65.9, 156.96, 169.37, 348.08, 277.63, 443.62, 182.52, 50.49, 166.42, 65.58, 41.28, 45.44, 61.81, 191.62, 91.62, 23.6, 240.54, 165.42, 51.98, 2.03, 209.93, 2.1, 350.94, 214.97, 155.69, 270.18, 164.51, 62.5, 216.23, 1.14, 222.28, 252.12, 151.25, 158.87, 367.68, 223.62, 212.4, 4.28, 129.05, 124.99, 106.85, 97.54, 3.61, 137.77, 297.22, 83.52, 136.38, 165.4, 181.5, 31.39, 247.53, 3.47, 103.77, 190.68, 177.51, 81.48, 333.13, 242.85, 76.63, 161.18, 308.07, 157.92, 27.0, 172.69, 3.15, 167.9, 277.6, 92.75, 320.07, 158.61, 349.37, 173.53, 322.93, 183.44, 6.18, 30.6, 170.14, 436.4, 196.08, 198.02, 79.29, 96.7, 168.41, 255.36, 344.94, 26.26, 185.37, 244.2, 187.55, 1.42, 295.82, 1.05, 205.88, 197.17, 80.28, 231.55, 82.94, 218.29, 172.71, 514.14, 138.17, 213.85, 5.73, 152.89, 308.17, 138.35, 276.88, 44.2, 169.62, 253.49, 176.16, 270.2, 346.13, 95.32, 14.88, 173.89, 203.86, 21.54, 110.09, 4.34, 105.57, 112.1, 17.1, 348.75, 3.34, 106.38, 381.52, 120.6, 195.01, 167.35, 305.7, 108.29, 239.44, 200.72, 3.6, 370.21, 228.27, 90.48, 186.17, 281.14, 155.94, 151.65, 216.17, 144.46, 197.9, 0.71, 168.16, 115.93, 1.75, 129.97, 144.71, 64.85, 175.47, 1.24, 167.87, 112.93, 215.7, 237.87, 131.99, 232.43, 65.14, 215.75, 180.73, 5.7, 174.21, 242.25, 184.38, 166.07, 166.2, 165.54, 90.52, 235.25, 154.67, 195.16, 172.4, 239.25, 99.05, 86.1, 45.54, 3.32, 121.52, 203.88, 178.12, 172.78, 243.61, 129.25, 3.7, 237.08, 278.98, 169.59, 96.6, 140.54, 176.32, 20.27, 199.81, 75.62, 218.16, 0.7, 101.47, 48.82, 211.1, 220.2, 382.02, 166.71, 175.72, 19.07, 122.36, 22.12, 113.68, 4.37, 312.38, 29.28, 146.16, 189.9, 128.58, 247.51, 74.75, 208.1, 300.25, 194.87, 45.02, 163.57, 80.35, 274.41, 123.98, 130.92, 1.27, 113.51, 212.11, 282.24, 35.55, 118.77, 84.21, 157.34, 149.79, 157.13, 353.41, 134.4, 2.03, 172.45, 24.77, 165.0, 241.93, 113.19, 91.74, 107.23, 158.14, 187.11, 175.53, 171.9, 209.76, 273.59, 210.63, 90.87, 161.32, 159.47, 214.33, 183.45, 5.72, 266.76, 138.4, 167.81, 219.15, 1.06, 162.07, 100.4, 179.09, 201.84, 175.17, 166.55, 2.15, 204.63, 53.03, 219.88, 155.37, 69.76, 191.73, 156.03, 5.31, 24.25, 108.72, 198.16, 230.11, 234.59, 2.48, 106.92, 197.1, 82.81, 231.85, 126.94, 0.07, 231.5, 265.76, 0.13, 33.88, 156.75, 68.99, 206.25, 102.42, 177.04, 175.51, 125.36, 1.06, 192.24, 33.77, 75.54, 181.56, 1.06, 260.01, 67.33, 196.82, 127.42]}};
+const EX = null;
+
+// ─── DICCIONARIO DE EXÁMENES (qué mide + por qué importa) ─────────────────────
+const EX_INFO = {
+  CT:    { mide:'el total de colesterol en tu sangre.',                                rol:'Es un factor de riesgo cardiovascular clave a largo plazo.' },
+  HDL:   { mide:'el colesterol "bueno", que limpia las arterias. Aquí más alto es mejor.', rol:'Protege tu corazón retirando colesterol de las paredes arteriales.' },
+  LDL:   { mide:'el colesterol "malo", que se deposita y tapa las arterias.',          rol:'Su exceso es la principal causa de placas e infartos.' },
+  TG:    { mide:'la grasa que circula en la sangre, ligada al azúcar y alcohol en exceso.', rol:'Elevados anticipan riesgo metabólico y resistencia a la insulina.' },
+  HbA1c: { mide:'tu promedio de azúcar en sangre de los últimos 3 meses.',             rol:'Es la mejor señal temprana de prediabetes.' },
+  Glicemia:{ mide:'el azúcar en sangre en ayunas.',                                    rol:'Sostenida alta, daña vasos sanguíneos y nervios.' },
+  HOMA:  { mide:'un índice que estima la resistencia a la insulina.',                  rol:'Alto significa que tu cuerpo necesita más insulina para manejar el azúcar.' },
+  Insulina:{ mide:'la hormona que mete el azúcar dentro de las células.',              rol:'Alta en ayunas anuncia resistencia a la insulina antes que la glucosa.' },
+  GOT:   { mide:'una enzima del hígado (y músculo) que sube cuando hay daño celular.', rol:'Marca inflamación o daño hepático.' },
+  GPT:   { mide:'una enzima específica del hígado.',                                    rol:'Es la más sensible para detectar hígado graso o daño hepático.' },
+  GGT:   { mide:'una enzima hepática ligada a las vías biliares y al alcohol.',        rol:'Sensible a alcohol, fármacos e hígado graso.' },
+  FA:    { mide:'una enzima presente en hígado y huesos.',                             rol:'Ayuda a distinguir problemas hepáticos de los óseos.' },
+  Bili:  { mide:'el pigmento del recambio de glóbulos rojos que procesa el hígado.',   rol:'Elevada puede indicar problemas de hígado o vesícula.' },
+  Creat: { mide:'un desecho muscular que filtran los riñones.',                        rol:'Elevada indica que el riñón está filtrando peor.' },
+  VFGe:  { mide:'cuánta sangre filtran tus riñones por minuto. Más alto es mejor.',    rol:'Es la medida directa de la función renal.' },
+  VitD:  { mide:'la vitamina del sol, clave para huesos, inmunidad y ánimo. Más alto (dentro de rango) es mejor.', rol:'Su déficit se asocia a inflamación, fatiga y huesos débiles.' },
+  VitB12:{ mide:'la vitamina para los nervios y la formación de glóbulos rojos. Más alto (dentro de rango) es mejor.', rol:'Su falta causa anemia y daño neurológico.' },
+  TSH:   { mide:'la hormona que regula la tiroides; sube cuando la tiroides trabaja poco.', rol:'Controla la velocidad de todo tu metabolismo.' },
+  T4L:   { mide:'la hormona tiroidea activa disponible en sangre.',                    rol:'Junto a la TSH evalúa el funcionamiento de la tiroides.' },
+  Hb:    { mide:'la proteína de los glóbulos rojos que transporta oxígeno. Más alto (dentro de rango) es mejor.', rol:'Baja significa anemia: menos oxígeno a músculos y cerebro.' },
+  Leucocitos:{ mide:'los glóbulos blancos, tu sistema de defensa.',                    rol:'Alterados indican infección o inflamación.' },
+  Plaquetas:{ mide:'las células que coagulan la sangre.',                              rol:'Son esenciales para detener sangrados.' },
+  VSG:   { mide:'el grado de inflamación general del cuerpo.',                          rol:'Elevada señala inflamación o infección activa.' },
+};
+
+// ─── HELPER COMPARTIDO: último valor de laboratorio disponible ────────────────
+function labLatest(g, m){
+  if (!EX) return null;
+  const grp = EX.grupos[g]; if (!grp) return null;
+  const mk = grp.marcadores[m]; if (!mk) return null;
+  for (let i = EX.fechas.length - 1; i >= 0; i--) {
+    const v = mk.valores[EX.fechas[i]];
+    if (v !== undefined) return { v, fecha: EX.fechas[i], ref_min: mk.ref_min, ref_max: mk.ref_max, unidad: mk.unidad, label: mk.label };
+  }
+  return null;
+}
+
+// ─── POBLAR UI ───────────────────────────────────────────────────────────────
+document.getElementById('nav-nombre').textContent = P.nombre;
+document.getElementById('hero-titulo').innerHTML = `${P.nombre.split(' ')[0]} en <em>datos</em>`;
+document.getElementById('hero-meta').textContent = `${P.total_registros.toLocaleString('es-CL')} registros · ${P.rango_datos} · Procesado ${P.fecha_proceso}`;
+document.getElementById('footer-fecha').textContent = `Generado ${P.fecha_proceso}`;
+
+function badge(el, val, okThr, warnThr, invert=false) {
+  const good = invert ? val <= okThr : val >= okThr;
+  const mid  = invert ? val <= warnThr : val >= warnThr;
+  el.className = 'hcard-badge ' + (good ? 'ok' : mid ? 'warn' : 'bad');
+  el.textContent = good ? 'Óptimo' : mid ? 'Normal' : 'Bajo';
+}
+
+const rhr = P.rhr_avg, vo2 = P.vo2_avg, hrv = P.hrv_avg;
+const steps = Math.round(P.steps_avg), pctHigh = P.pct_high_steps;
+
+document.getElementById('hc-rhr').textContent = rhr;
+badge(document.getElementById('hc-rhr-b'), rhr, 62, 72, true);
+document.getElementById('hc-vo2').textContent = vo2;
+badge(document.getElementById('hc-vo2-b'), vo2, 44, 38);
+document.getElementById('hc-hrv').textContent = hrv;
+badge(document.getElementById('hc-hrv-b'), hrv, 42, 30);
+document.getElementById('hc-steps').textContent = steps.toLocaleString('es-CL');
+badge(document.getElementById('hc-steps-b'), steps, 9000, 6000);
+document.getElementById('hc-active').textContent = pctHigh + '%';
+badge(document.getElementById('hc-active-b'), pctHigh, 50, 30);
+document.getElementById('hc-hr').textContent = P.hr_avg;
+
+// métricas texto
+document.getElementById('mx-rhr').textContent = rhr;
+document.getElementById('mx-vo2').textContent = vo2;
+document.getElementById('mx-hrv').textContent = hrv;
+document.getElementById('mx-steps').textContent = steps.toLocaleString('es-CL');
+document.getElementById('mx-hr').textContent = P.hr_avg;
+document.getElementById('mx-cons').textContent = pctHigh + '%';
+
+// posición en escala (texto simplificado)
+const pos = (val, t1, t2, t3, t4) => val >= t4 ? 'excelente' : val >= t3 ? 'bueno' : val >= t2 ? 'normal' : val >= t1 ? 'bajo' : 'crítico';
+document.getElementById('mx-rhr-pos').textContent  = '← ' + (rhr < 55 ? 'atlético' : rhr < 62 ? 'óptimo' : rhr < 72 ? 'normal' : 'elevado');
+document.getElementById('mx-vo2-pos').textContent  = '← ' + (vo2 >= 50 ? 'excelente' : vo2 >= 44 ? 'bueno' : vo2 >= 38 ? 'normal' : 'bajo');
+document.getElementById('mx-hrv-pos').textContent  = '← ' + (hrv >= 55 ? 'excelente' : hrv >= 42 ? 'bueno' : hrv >= 30 ? 'normal' : 'bajo');
+document.getElementById('mx-steps-pos').textContent = '← ' + (steps >= 12000 ? 'excelente' : steps >= 9000 ? 'bueno' : steps >= 6000 ? 'normal' : 'bajo');
+document.getElementById('mx-cons-pos').textContent  = '← ' + (pctHigh >= 60 ? 'excelente' : pctHigh >= 40 ? 'bueno' : pctHigh >= 25 ? 'normal' : 'bajo');
+
+// ─── SCORE ANIMADO ───────────────────────────────────────────────────────────
+const score = P.score;
+const arc = document.getElementById('scoreArc');
+const numSvg = document.getElementById('scoreNumSvg');
+const lblSvg = document.getElementById('scoreLblSvg');
+const circ = 2 * Math.PI * 80;
+
+document.getElementById('sb-rhr-val').textContent  = P.score_rhr  + '/20';
+document.getElementById('sb-vo2-val').textContent  = P.score_vo2  + '/20';
+document.getElementById('sb-hrv-val').textContent  = P.score_hrv  + '/20';
+document.getElementById('sb-steps-val').textContent = P.score_steps + '/20';
+document.getElementById('sb-cons-val').textContent  = P.score_cons  + '/20';
+document.getElementById('sb-rhr-bar').style.width   = (P.score_rhr/20*100)  + '%';
+document.getElementById('sb-vo2-bar').style.width   = (P.score_vo2/20*100)  + '%';
+document.getElementById('sb-hrv-bar').style.width   = (P.score_hrv/20*100)  + '%';
+document.getElementById('sb-steps-bar').style.width = (P.score_steps/20*100) + '%';
+document.getElementById('sb-cons-bar').style.width  = (P.score_cons/20*100)  + '%';
+
+setTimeout(() => {
+  arc.style.strokeDashoffset = circ - (circ * score / 100);
+  arc.style.stroke = score >= 70 ? '#42f5a7' : score >= 50 ? '#c8f542' : '#ff9140';
+  let s = 0;
+  const iv = setInterval(() => { s += 1; numSvg.textContent = s; if (s >= score) clearInterval(iv); }, 22);
+  lblSvg.textContent = score >= 70 ? 'Bueno' : score >= 55 ? 'Moderado' : score >= 40 ? 'Bajo' : 'Crítico';
+}, 500);
+
+// ─── GRÁFICOS ────────────────────────────────────────────────────────────────
+const ACCENT='#c8f542', RED='#ff5c5c', ORANGE='#ff9140', BLUE='#42b4f5', GREEN='#42f5a7';
+const GRID='rgba(255,255,255,0.05)';
+const TICK = { color:'#5a5754', font:{ size:11, family:'DM Mono' } };
+const base = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{ display:false } },
+  scales:{
+    x:{ grid:{ color:GRID }, ticks:{ ...TICK, maxTicksLimit:8 } },
+    y:{ grid:{ color:GRID }, ticks:TICK }
+  }
+};
+
+if (CD.heart_rate.dates.length) {
+  new Chart(document.getElementById('hrChart'),{
+    type:'line', data:{ labels:CD.heart_rate.dates, datasets:[{ data:CD.heart_rate.values, borderColor:ACCENT, backgroundColor:'rgba(200,245,66,0.06)', borderWidth:1.5, fill:true, tension:0.4, pointRadius:0 }] },
+    options:{...base, scales:{...base.scales, y:{...base.scales.y, min:40, max:160}}}
+  });
+}
+if (CD.vo2max.dates.length) {
+  new Chart(document.getElementById('vo2Chart'),{
+    type:'line', data:{ labels:CD.vo2max.dates, datasets:[{ data:CD.vo2max.values, borderColor:BLUE, backgroundColor:'rgba(66,180,245,0.08)', borderWidth:2, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:BLUE }] },
+    options:{...base}
+  });
+}
+if (CD.hrv.dates.length) {
+  new Chart(document.getElementById('hrvChart'),{
+    type:'bar', data:{ labels:CD.hrv.dates, datasets:[{ data:CD.hrv.values,
+      backgroundColor:CD.hrv.values.map(v => v < 30 ? 'rgba(255,92,92,0.5)' : 'rgba(66,245,167,0.3)'),
+      borderColor:CD.hrv.values.map(v => v < 30 ? RED : GREEN), borderWidth:1
+    }] }, options:{...base}
+  });
+}
+if (CD.resting_hr.dates.length) {
+  new Chart(document.getElementById('rhrChart'),{
+    type:'line', data:{ labels:CD.resting_hr.dates, datasets:[{ data:CD.resting_hr.values, borderColor:ORANGE, backgroundColor:'rgba(255,145,64,0.08)', borderWidth:2, fill:true, tension:0.4, pointRadius:0 }] },
+    options:{...base}
+  });
+}
+if (CD.steps.dates.length) {
+  const step_colors = CD.steps.values.map(v => v >= 10000 ? 'rgba(200,245,66,0.5)' : v >= 6000 ? 'rgba(245,200,66,0.4)' : 'rgba(255,92,92,0.4)');
+  new Chart(document.getElementById('stepsChart'),{
+    type:'bar', data:{ labels:CD.steps.dates, datasets:[{ data:CD.steps.values, backgroundColor:step_colors, borderWidth:0 }] },
+    options:{...base}
+  });
+}
+
+// ─── HALLAZGO AUTOMÁTICO ─────────────────────────────────────────────────────
+let hallazgo = '';
+if (CD.vo2max.values.length > 3) {
+  const vMax = Math.max(...CD.vo2max.values);
+  const vMin = Math.min(...CD.vo2max.values);
+  const vLast = CD.vo2max.values[CD.vo2max.values.length - 1];
+  const diff = vMax - vMin;
+  if (diff > 5) {
+    hallazgo = `Tu VO2max ha variado ${diff.toFixed(1)} puntos entre su máximo (${vMax}) y mínimo (${vMin}). Actualmente estás en ${vLast} — lo que muestra directamente la relación entre tu actividad física y tu capacidad cardiorrespiratoria. Cuando te mueves sostenidamente, sube. Cuando paras, baja.`;
+  }
+}
+if (!hallazgo && P.pct_low_steps > 20) {
+  hallazgo = `El ${P.pct_low_steps}% de tus días registrados tienes menos de 5.000 pasos — casi 1 de cada 4 días. La irregularidad en la actividad física es tan riesgosa como el sedentarismo constante.`;
+}
+if (!hallazgo) {
+  hallazgo = `Tienes ${P.total_registros.toLocaleString('es-CL')} registros biométricos desde ${P.rango_datos}. Esa continuidad de datos es en sí misma valiosa — permite ver tendencias que una sola medición nunca mostraría.`;
+}
+document.getElementById('hallazgo-txt').textContent = hallazgo;
+
+// ─── RIESGOS DINÁMICOS ───────────────────────────────────────────────────────
+const riesgos = [];
+if (hrv < 35) riesgos.push({ n:'01', name:'Estrés crónico y baja recuperación', lv:'lv-a', txt:`Tu HRV promedio de ${hrv} ms está bajo el umbral de recuperación adecuada. HRV bajo sostenido indica que el sistema nervioso autónomo está bajo carga — estrés, sueño insuficiente o inflamación de bajo grado. Crea un ciclo que se retroalimenta con el sedentarismo.`, pills:['HRV '+hrv+' ms','Umbral crítico <30ms'] });
+if (vo2 < 40) riesgos.push({ n:'02', name:'Deterioro de capacidad cardiovascular', lv:'lv-a', txt:`Con VO2max de ${vo2}, tu capacidad aeróbica está por debajo del nivel óptimo para tu grupo etario. Esto predice mayor riesgo cardiovascular a largo plazo si no se revierte con actividad física sostenida.`, pills:['VO2max '+vo2,'Óptimo >44 para tu edad'] });
+if (P.pct_low_steps > 25) riesgos.push({ n:'03', name:'Sedentarismo estructural', lv:'lv-a', txt:`El ${P.pct_low_steps}% de tus días tienen menos de 5.000 pasos. El sedentarismo frecuente activa vías inflamatorias y reduce la sensibilidad a la insulina gradualmente — sin síntomas visibles hasta que aparece en exámenes de sangre.`, pills:[P.pct_low_steps+'% días <5k pasos','Patrón irregular detectado'] });
+// Riesgos derivados de exámenes (combina wearable + sangre)
+if (EX) {
+  const HDL = labLatest('lipidos','HDL'), TG = labLatest('lipidos','TG');
+  const HOMA = labLatest('metabolismo','HOMA'), HbA1c = labLatest('metabolismo','HbA1c'), Glu = labLatest('metabolismo','Glicemia');
+  const VitD = labLatest('nutrientes','VitD');
+  const GPT = labLatest('hepatico','GPT'), GOT = labLatest('hepatico','GOT');
+
+  // HDL bajo + baja condición física → riesgo cardiovascular compuesto
+  if (HDL && HDL.ref_min !== null && HDL.v < HDL.ref_min) {
+    riesgos.push({ name:'Colesterol HDL bajo + baja condición física', lv:'lv-m', txt:`Tu HDL (colesterol protector) está en ${HDL.v} ${HDL.unidad}, bajo el mínimo de ${HDL.ref_min}. Combinado con tu VO2max de ${vo2} y HRV de ${hrv} ms, el escudo cardiovascular está debilitado justo cuando más se necesita. El ejercicio aeróbico es la palanca más directa para subir el HDL.`, pills:['HDL '+HDL.v+' '+HDL.unidad,'VO2max '+vo2,'Sube con ejercicio aeróbico'] });
+  }
+
+  // Resistencia a la insulina incipiente: HOMA alto-normal + sedentarismo
+  if (HOMA && HOMA.v >= 2.0 && P.pct_low_steps > 40) {
+    riesgos.push({ name:'Resistencia a la insulina incipiente', lv:'lv-m', txt:`Tu HOMA es ${HOMA.v} (límite 2.5): todavía normal, pero en la zona alta. Sumado a que el ${P.pct_low_steps}% de tus días son sedentarios, la sensibilidad a la insulina tiende a empeorar. La buena noticia: tu HbA1c (${HbA1c?HbA1c.v+'%':'—'}) y glicemia (${Glu?Glu.v:'—'} mg/dL) siguen en rango, así que estás a tiempo de revertirlo con actividad física.`, pills:['HOMA '+HOMA.v+' / 2.5','Glicemia en rango','Reversible con ejercicio'] });
+  } else if (HbA1c && HbA1c.v <= 5.7 && Glu && Glu.v <= 100) {
+    // Metabolismo protegido pese al perfil de actividad — nota tranquilizadora
+    riesgos.push({ name:'Metabolismo de la glucosa: bajo control', lv:'lv-m', txt:`A diferencia de lo que sugeriría tu perfil de actividad, tus exámenes metabólicos están sanos: HbA1c ${HbA1c.v}% y glicemia ${Glu.v} mg/dL, ambos en rango. Tu sangre aún no refleja el sedentarismo — pero conservar ese margen depende de revertir la inactividad antes de que aparezca en los próximos exámenes.`, pills:['HbA1c '+HbA1c.v+'%','Glicemia '+Glu.v+' mg/dL','Margen protector'] });
+  }
+
+  // Vitamina D insuficiente + sedentarismo → inflamación de bajo grado
+  if (VitD && VitD.v < 40 && P.pct_low_steps > 40) {
+    riesgos.push({ name:'Vitamina D insuficiente + sedentarismo', lv:'lv-m', txt:`Tu vitamina D es ${VitD.v} ${VitD.unidad} (idealmente sobre 40). Niveles bajos junto al sedentarismo (${P.pct_low_steps}% de días <5k pasos) favorecen un estado inflamatorio de bajo grado y peor recuperación — coherente con tu HRV de ${hrv} ms. Exposición solar, actividad al aire libre y, si persiste, suplementación.`, pills:['VitD '+VitD.v+' '+VitD.unidad,'Sedentarismo '+P.pct_low_steps+'%','Inflamación de bajo grado'] });
+  }
+
+  // Hígado: descartado por exámenes vs. silencioso sin datos
+  if (GPT && GOT && (GPT.ref_max===null || GPT.v <= GPT.ref_max) && (GOT.ref_max===null || GOT.v <= GOT.ref_max)) {
+    riesgos.push({ name:'Hígado graso (NAFLD): descartado por ahora', lv:'lv-m', txt:`Tus transaminasas están normales (GPT ${GPT.v}, GOT ${GOT.v} U/L), lo que hace improbable un hígado graso activo hoy. Es el punto ciego del wearable que tus exámenes sí pudieron cerrar. Mantén el control si el peso o el sedentarismo aumentan.`, pills:['GPT '+GPT.v+' U/L','GOT '+GOT.v+' U/L','Sin señal de NAFLD'] });
+  }
+} else {
+  // Sin exámenes disponibles: riesgos silenciosos genéricos
+  riesgos.push({ name:'Resistencia a la insulina silenciosa', lv:'lv-m', txt:`No detectable por wearable. Requiere examen de sangre (HbA1c y triglicéridos/HDL). Es el primer dominó metabólico que cae sin síntomas — y el más fácil de revertir si se detecta a tiempo.`, pills:['Requiere examen HbA1c','Triglicéridos/HDL','Gratis en CESFAM'] });
+  riesgos.push({ name:'Hígado graso no alcohólico (NAFLD)', lv:'lv-m', txt:`Silencioso, sin síntomas perceptibles. Detectable solo con transaminasas en sangre. Afecta al 23% de adultos en Chile. El wearable no puede detectarlo — es el punto ciego del monitoreo personal.`, pills:['Requiere GOT/GPT','Sin señal en wearable'] });
+}
+
+const rl = document.getElementById('risk-list');
+riesgos.forEach((r, i) => {
+  const n = String(i + 1).padStart(2, '0');
+  rl.innerHTML += `<div class="risk-item"><div class="risk-hdr"><span class="risk-n">${n}</span><span class="risk-name">${r.name}</span><span class="risk-lv ${r.lv}">${r.lv==='lv-a'?'Riesgo alto':'Riesgo moderado'}</span></div><div class="risk-body">${r.txt}<div class="dpills">${r.pills.map(p=>`<span class="dp">${p}</span>`).join('')}</div></div></div>`;
+});
+
+// ─── CHECKLIST ───────────────────────────────────────────────────────────────
+const STORE = 'biodata_cl_' + (P.nombre||'').replace(/\s/g,'_').toLowerCase();
+function loadCL(){ try{ return JSON.parse(localStorage.getItem(STORE))||{}; }catch(e){ return {}; } }
+function saveCL(s){ try{ localStorage.setItem(STORE, JSON.stringify(s)); }catch(e){} }
+function updateProg(){
+  const items = document.querySelectorAll('.cl-item');
+  const done = [...items].filter(i => i.classList.contains('done')).length;
+  const pct = Math.round(done/items.length*100);
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progLbl').textContent = done === items.length
+    ? '✓ Todo completado — excelente trabajo'
+    : `${done} de ${items.length} completadas (${pct}%)`;
+}
+function toggleCheck(el){
+  const s = loadCL(); el.classList.toggle('done');
+  s[el.dataset.id] = el.classList.contains('done'); saveCL(s); updateProg();
+}
+(function init(){
+  const s = loadCL();
+  document.querySelectorAll('.cl-item').forEach(el => { if(s[el.dataset.id]) el.classList.add('done'); });
+  updateProg();
+})();
+
+// ─── EXÁMENES ────────────────────────────────────────────────────────────────
+if (EX) {
+  const fechas = EX.fechas;
+  const labNames = EX.labs;
+
+  // Fechas header
+  const fechasDiv = document.getElementById('ex-fechas');
+  fechas.forEach(f => {
+    const b = document.createElement('span');
+    b.className = 'ex-date-badge active';
+    b.textContent = f + ' · ' + (labNames[f] || '');
+    fechasDiv.appendChild(b);
+  });
+
+  function status(val, ref_min, ref_max) {
+    if (ref_min !== null && val < ref_min) return 'bad';
+    if (ref_max !== null && val > ref_max) return 'bad';
+    const margin = 0.15;
+    if (ref_min !== null && val < ref_min * (1 + margin)) return 'warn';
+    if (ref_max !== null && val > ref_max * (1 - margin)) return 'warn';
+    return 'ok';
+  }
+
+  function refText(mk) {
+    if (mk.ref_min !== null && mk.ref_max !== null) return `ref ${mk.ref_min}–${mk.ref_max} ${mk.unidad}`;
+    if (mk.ref_max !== null) return `ideal <${mk.ref_max} ${mk.unidad}`;
+    if (mk.ref_min !== null) return `ideal >${mk.ref_min} ${mk.unidad}`;
+    return 'sin rango definido';
+  }
+
+  function explainMarker(mkey, mk, lastVal, dot) {
+    const info = EX_INFO[mkey] || { mide: 'un marcador de laboratorio.', rol: '' };
+    const vmap = { ok:'Bien', warn:'Regular', bad:'Mal', eq:'Sin dato' };
+    const verdict = vmap[dot] || 'Sin dato';
+    let porque;
+    if (lastVal === undefined || dot === 'eq') {
+      porque = 'No hay una medición reciente disponible para evaluarlo.';
+    } else if (dot === 'ok') {
+      porque = `Tu valor está dentro del rango saludable (${refText(mk)}). ${info.rol}`;
+    } else if (dot === 'warn') {
+      porque = `Está en el límite del rango (${refText(mk)}) — conviene vigilarlo. ${info.rol}`;
+    } else {
+      porque = `Está fuera del rango de referencia (${refText(mk)}). ${info.rol}`;
+    }
+    return `<div class="ex-explain"><span class="ex-verdict ${dot}">${verdict}</span>`
+      + `<span class="ex-explain-txt"><strong style="color:var(--text2)">Qué mide:</strong> ${info.mide} `
+      + `<strong style="color:var(--text2)">Por qué:</strong> ${porque}</span></div>`;
+  }
+
+  function trendArrow(v1, v2, ref_min, ref_max) {
+    if (v1 === undefined || v2 === undefined) return '';
+    const diff = v2 - v1;
+    if (Math.abs(diff) < 0.01 * Math.max(Math.abs(v1), 1)) return '<span class="ex-trend eq">—</span>';
+    // "up" is bad if above ref_max, good if below ref_min (higher is better for HDL, VFGe, vitamins)
+    const higherIsBetter = ref_min !== null && ref_max === null;
+    const goingUp = diff > 0;
+    const isBad = higherIsBetter ? !goingUp : goingUp;
+    return `<span class="ex-trend ${isBad ? 'up' : 'dn'}">${goingUp ? '↑' : '↓'}</span>`;
+  }
+
+  const grid = document.getElementById('ex-grid');
+  Object.entries(EX.grupos).forEach(([gkey, grupo]) => {
+    const card = document.createElement('div');
+    card.className = 'ex-card';
+
+    // Header with column labels
+    let html = `<div class="ex-card-title">${grupo.label}</div>`;
+    html += `<div class="ex-row"><span class="ex-name"></span><span class="ex-vals">`;
+    fechas.forEach(f => html += `<span class="ex-col-hdr">${f.slice(0,7)}</span>`);
+    html += `<span class="ex-col-hdr" style="min-width:20px"></span></div>`;
+
+    Object.entries(grupo.marcadores).forEach(([mkey, mk]) => {
+      const vals = mk.valores;
+      const v1 = vals[fechas[0]], v2 = vals[fechas[1]];
+      const lastVal = v2 !== undefined ? v2 : v1;
+      const dot = lastVal !== undefined ? status(lastVal, mk.ref_min, mk.ref_max) : 'eq';
+
+      html += `<div class="ex-marker">`;
+      html += `<div class="ex-row">`;
+      html += `<div class="ex-dot ${dot}"></div>`;
+      html += `<span class="ex-name">${mk.label}</span>`;
+      html += `<span class="ex-vals">`;
+      fechas.forEach(f => {
+        const v = vals[f];
+        const st = v !== undefined ? status(v, mk.ref_min, mk.ref_max) : '';
+        const color = st === 'bad' ? 'var(--red)' : st === 'warn' ? 'var(--accent2)' : 'var(--text)';
+        html += `<span class="ex-val" style="color:${color}">${v !== undefined ? v : '—'}</span>`;
+      });
+      html += trendArrow(v1, v2, mk.ref_min, mk.ref_max);
+      html += `<span class="ex-unit">${mk.unidad}</span>`;
+      html += `</span></div>`;
+      html += explainMarker(mkey, mk, lastVal, dot);
+      html += `</div>`;
+    });
+
+    card.innerHTML = html;
+    grid.appendChild(card);
+  });
+}
+
+// ─── ANÁLISIS CRUZADO (wearable + exámenes) ───────────────────────────────────
+if (EX) {
+  const TG    = labLatest('lipidos','TG');
+  const Hb    = labLatest('hemograma','Hb');
+  const Glu   = labLatest('metabolismo','Glicemia');
+  const HbA1c = labLatest('metabolismo','HbA1c');
+  const VitD  = labLatest('nutrientes','VitD');
+
+  // Condiciones del wearable
+  const hrvLow  = P.hrv_avg < 35;
+  const vo2Low  = P.vo2_avg < 40;
+  const rhrHigh = P.rhr_avg > 65;
+  const sed     = P.pct_low_steps > 40;
+
+  // Condiciones de sangre (null = sin dato)
+  const tgHigh  = TG  ? TG.v  > (TG.ref_max  || 150) : null;
+  const hbLow   = Hb  ? Hb.v  < (Hb.ref_min  || 12)  : null;
+  const gluHigh = Glu ? Glu.v > (Glu.ref_max || 100) : (HbA1c ? HbA1c.v > 5.7 : null);
+  const vitdLow = VitD ? VitD.v < 40 : null;
+
+  const wLeg = (name, val, unidad, hit) => ({ src:'Wearable', name, val: (val!==null && val!==undefined) ? val+' '+unidad : '—', hit, nd:false });
+  const lLeg = (name, lab, hit) => ({ src:'Examen de sangre', name, val: lab ? lab.v+' '+lab.unidad : 'sin dato', hit: hit===true, nd: !lab });
+
+  const correls = [
+    { title:'Riesgo metabólico',
+      legA: wLeg('HRV (recuperación)', P.hrv_avg, 'ms', hrvLow),
+      legB: lLeg('Triglicéridos', TG, tgHigh),
+      a: hrvLow, b: tgHigh,
+      txt:{ both:'HRV bajo y triglicéridos altos juntos apuntan a estrés metabólico: bajo carga simpática sostenida el cuerpo tiende a almacenar grasa y elevar la glucosa. Es la antesala silenciosa del síndrome metabólico.',
+            alert:`Tu HRV de ${P.hrv_avg} ms indica baja recuperación, pero tus triglicéridos (${TG?TG.v:'—'}) están controlados — eso te protege metabólicamente por ahora. El eslabón débil es la recuperación, no la grasa en sangre.`,
+            clear:'Ni tu HRV ni tus triglicéridos están en zona de riesgo metabólico combinado.',
+            nd:'Falta el dato de triglicéridos para completar este cruce.' } },
+    { title:'Capacidad aeróbica comprometida',
+      legA: wLeg('VO2max', P.vo2_avg, 'ml/kg/min', vo2Low),
+      legB: lLeg('Hemoglobina', Hb, hbLow),
+      a: vo2Low, b: hbLow,
+      txt:{ both:'VO2max bajo y hemoglobina baja se potencian: menos glóbulos rojos transportan menos oxígeno, y un corazón poco entrenado lo distribuye peor. La fatiga al esfuerzo tiene doble origen y debe abordarse por ambos frentes.',
+            alert:`Tu VO2max de ${P.vo2_avg} es muy bajo para tu grupo etario. ${Hb ? 'Tu hemoglobina está en rango, así que el problema es de entrenamiento, no de transporte de oxígeno.' : ''}`,
+            clear:'Tu capacidad aeróbica no muestra el doble compromiso de fitness + transporte de oxígeno.',
+            nd:`Tu VO2max de ${P.vo2_avg} es muy bajo, pero falta la hemoglobina para confirmar si tu capacidad aeróbica está doblemente comprometida. Un hemograma cerraría este cruce.` } },
+    { title:'Riesgo cardiovascular-metabólico',
+      legA: wLeg('FC en reposo', P.rhr_avg, 'bpm', rhrHigh),
+      legB: lLeg('Glicemia', Glu, gluHigh),
+      a: rhrHigh, b: gluHigh,
+      txt:{ both:'Frecuencia cardíaca en reposo elevada y glucosa alta juntas describen un sistema cardiovascular y metabólico bajo presión simultánea — el patrón que precede a hipertensión y diabetes tipo 2.',
+            alert:`Tu FC en reposo de ${P.rhr_avg} bpm está elevada (ideal <62), señal de bajo acondicionamiento cardiovascular. Pero tu glicemia (${Glu?Glu.v:'—'} mg/dL) está en rango: el frente metabólico aguanta, el cardiovascular no.`,
+            clear:'Ni tu FC en reposo ni tu glucosa están en zona de riesgo cardiovascular-metabólico.',
+            nd:'Falta el dato de glicemia para completar este cruce.' } },
+    { title:'Inflamación crónica',
+      legA: lLeg('Vitamina D', VitD, vitdLow),
+      legB: wLeg('Sedentarismo', P.pct_low_steps, '% días <5k', sed),
+      a: vitdLow, b: sed,
+      txt:{ both:`Vitamina D insuficiente (${VitD?VitD.v:'—'} ng/mL) y sedentarismo (${P.pct_low_steps}% de días) se combinan para sostener una inflamación de bajo grado: la vitamina D regula la respuesta inmune y el movimiento es antiinflamatorio. Sin ambos, el cuerpo queda en alerta crónica de baja intensidad — coherente con tu HRV bajo.`,
+            alert:'Solo una de las dos señales está activa, pero conviene corregirla antes de que se sume la otra.',
+            clear:'Tu vitamina D y tu nivel de actividad no apuntan a inflamación crónica combinada.',
+            nd:'Falta el dato de vitamina D para completar este cruce.' } },
+  ];
+
+  const cg = document.getElementById('cross-grid');
+  correls.forEach(c => {
+    const aHit = c.a === true, bHit = c.b === true;
+    const aND = c.a === null,  bND = c.b === null;
+    let state, flagLabel, txtKey;
+    if (aHit && bHit)        { state='active'; flagLabel='Riesgo activo';     txtKey='both'; }
+    else if (aND || bND)     { state='alert';  flagLabel=(aHit||bHit)?'Señal de alerta':'Dato incompleto'; txtKey='nd'; }
+    else if (aHit || bHit)   { state='alert';  flagLabel='Señal de alerta';   txtKey='alert'; }
+    else                     { state='clear';  flagLabel='Sin señal';         txtKey='clear'; }
+
+    const legHtml = leg => `<div class="cross-leg ${leg.nd?'nd':leg.hit?'hit':'okv'}"><div class="cross-leg-src">${leg.src}</div><div class="cross-leg-name">${leg.name}</div><div class="cross-leg-val">${leg.val}</div></div>`;
+    cg.innerHTML += `<div class="cross-card ${state}"><div class="cross-hdr"><span class="cross-title">${c.title}</span><span class="cross-flag ${state}">${flagLabel}</span></div>`
+      + `<div class="cross-legs">${legHtml(c.legA)}<span class="cross-plus">+</span>${legHtml(c.legB)}</div>`
+      + `<div class="cross-txt">${c.txt[txtKey]}</div></div>`;
+  });
+}
+
+// ─── SCROLL FADE ─────────────────────────────────────────────────────────────
+const obs = new IntersectionObserver(entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), { threshold:0.08 });
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
