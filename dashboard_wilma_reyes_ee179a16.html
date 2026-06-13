@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BioData · Wilma Reyes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Epilogue:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0a0a0a; --bg2:#111111; --surface:#1e1e1e; --surface2:#252525;
+  --border:rgba(255,255,255,0.08); --text:#f0ede8; --text2:#9a9690; --text3:#5a5754;
+  --accent:#c8f542; --green:#42f5a7; --yellow:#f5c842; --red:#ff5c5c;
+  --mono:'DM Mono',monospace; --serif:'DM Serif Display',serif;
+  --sans:'Epilogue',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;font-size:15px}
+a{color:var(--accent);text-decoration:none}
+
+/* Layout */
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+section{padding:60px 0;border-top:1px solid var(--border)}
+.section-label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+               text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+h2{font-family:var(--serif);font-size:clamp(1.6rem,4vw,2.4rem);
+   font-weight:400;line-height:1.2;margin-bottom:8px}
+h2 em{font-style:italic;color:var(--accent)}
+.section-intro{color:var(--text2);max-width:600px;margin-bottom:32px;font-size:.93rem}
+
+/* Cards */
+.card{background:var(--surface);border-radius:14px;padding:20px;
+      border:1px solid var(--border)}
+.card-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.card-grid-2{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+
+/* Biomarker card */
+.bm-card{background:var(--surface);border-radius:14px;padding:18px;
+         border:1px solid var(--border);border-top:3px solid var(--border);
+         display:flex;flex-direction:column;gap:8px;position:relative}
+.bm-label{font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+           text-transform:uppercase;color:var(--text3)}
+.bm-val{font-family:var(--serif);font-size:2rem;line-height:1}
+.bm-unit{font-family:var(--mono);font-size:.72rem;color:var(--text2);margin-left:4px}
+.bm-tag{display:inline-block;font-family:var(--mono);font-size:.68rem;font-weight:700;
+        padding:3px 10px;border-radius:20px;margin-top:4px}
+.bm-range{font-family:var(--mono);font-size:.68rem;color:var(--text3);margin-top:2px}
+.info-btn{position:absolute;top:14px;right:14px;background:var(--surface2);
+          border:1px solid var(--border);color:var(--text2);border-radius:50%;
+          width:22px;height:22px;font-size:.7rem;cursor:pointer;
+          display:flex;align-items:center;justify-content:center}
+.info-btn:hover{color:var(--text);border-color:var(--accent)}
+
+/* Score cards */
+.scores-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+             margin-top:28px}
+.score-card{background:var(--surface);border-radius:14px;padding:28px;
+            border:1px solid var(--border);text-align:center;position:relative}
+.score-card h3{font-family:var(--mono);font-size:.75rem;letter-spacing:.1em;
+               text-transform:uppercase;color:var(--text3);margin-bottom:16px}
+.score-circle{margin:0 auto 16px}
+.score-num{font-family:var(--serif);font-size:3rem;line-height:1}
+.score-badge{font-family:var(--mono);font-size:.7rem;padding:3px 12px;
+             border-radius:20px;display:inline-block;margin-top:8px}
+.score-note{font-size:.8rem;color:var(--text2);margin-top:12px;line-height:1.5}
+
+/* Tendencia bar */
+.tend-bar-wrap{position:relative;height:10px;background:linear-gradient(to right,#ff5c5c,#f5c842,#42f5a7);
+               border-radius:5px;margin:20px 0}
+.tend-marker{position:absolute;top:-4px;width:18px;height:18px;border-radius:50%;
+             background:var(--text);border:3px solid var(--surface);transform:translateX(-50%)}
+.tend-labels{display:flex;justify-content:space-between;font-family:var(--mono);
+             font-size:.65rem;color:var(--text3)}
+
+/* Riesgo gauge */
+.gauge-wrap{position:relative;width:200px;margin:0 auto}
+
+/* Alertas */
+.alerta-list{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:16px;text-align:left}
+.alerta-item{display:flex;gap:10px;align-items:flex-start;font-size:.82rem;
+             background:rgba(255,92,92,.08);border-radius:8px;padding:10px 12px;
+             border-left:3px solid var(--red);color:var(--text2)}
+.alerta-item.patron{border-left-color:var(--yellow);background:rgba(245,200,66,.06)}
+.alerta-icon{flex-shrink:0;margin-top:1px}
+
+/* Wearable charts */
+.chart-wrap{background:var(--surface);border-radius:14px;padding:20px;
+            border:1px solid var(--border)}
+.chart-title{font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;
+             text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+.chart-canvas{height:180px;position:relative}
+.charts-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+             margin-top:20px}
+
+/* Recomendaciones */
+.reco-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.reco-card{background:var(--surface);border-radius:14px;padding:22px;
+           border:1px solid var(--border)}
+.reco-icon{font-size:1.6rem;margin-bottom:12px}
+.reco-title{font-weight:700;margin-bottom:6px}
+.reco-desc{font-size:.83rem;color:var(--text2);line-height:1.55}
+.reco-mejora{font-family:var(--mono);font-size:.68rem;color:var(--accent);
+              margin-top:10px;letter-spacing:.04em}
+
+/* Checklist */
+.cl-item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;
+         border-bottom:1px solid var(--border);cursor:pointer}
+.cl-item:last-child{border-bottom:none}
+.cl-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);
+          flex-shrink:0;display:flex;align-items:center;justify-content:center;
+          transition:all .2s;margin-top:1px}
+.cl-item.done .cl-check{background:var(--accent);border-color:var(--accent);color:#000}
+.cl-item.done .cl-text{opacity:.5;text-decoration:line-through}
+.cl-text{flex:1;font-size:.88rem}
+.cl-sub{font-size:.75rem;color:var(--text3);margin-top:2px}
+.cl-tag{font-family:var(--mono);font-size:.65rem;padding:2px 8px;border-radius:10px;
+        margin-top:4px;display:inline-block}
+.tag-u{background:rgba(255,92,92,.15);color:var(--red)}
+.tag-s{background:rgba(245,200,66,.12);color:var(--yellow)}
+.tag-m{background:rgba(66,245,167,.1);color:var(--green)}
+.prog-bg{height:4px;background:var(--surface2);border-radius:2px;margin-top:20px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.prog-lbl{font-family:var(--mono);font-size:.72rem;color:var(--text3);margin-top:6px}
+
+/* Header */
+.site-header{background:var(--bg2);border-bottom:1px solid var(--border);
+             padding:28px 0}
+.header-inner{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.header-name{font-family:var(--serif);font-size:clamp(1.8rem,5vw,3rem);font-weight:400}
+.header-meta{font-family:var(--mono);font-size:.72rem;color:var(--text3);
+             margin-top:6px;letter-spacing:.06em}
+.header-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.badge{font-family:var(--mono);font-size:.68rem;padding:4px 12px;border-radius:20px;
+       border:1px solid var(--border);color:var(--text2)}
+.badge.ok{border-color:var(--green);color:var(--green)}
+.badge.warn{border-color:var(--yellow);color:var(--yellow)}
+.badge.bad{border-color:var(--red);color:var(--red)}
+
+/* Nav */
+nav{background:var(--bg2);border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100}
+.nav-inner{display:flex;gap:0;overflow-x:auto}
+.nav-link{font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;
+          text-transform:uppercase;padding:12px 18px;color:var(--text3);
+          border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer}
+.nav-link:hover{color:var(--text);border-bottom-color:var(--border)}
+.nav-link.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* Cruce evidencia */
+.cruce-card{background:var(--surface);border-radius:14px;padding:22px;
+            border:1px solid var(--border);border-left:4px solid var(--yellow)}
+.cruce-titulo{font-weight:700;margin-bottom:6px}
+.cruce-desc{font-size:.83rem;color:var(--text2);line-height:1.55}
+.cruce-fuente{font-family:var(--mono);font-size:.65rem;color:var(--text3);
+              margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;
+               display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-card{background:var(--surface);border-radius:16px;padding:28px;
+            max-width:520px;width:100%;border:1px solid var(--border);
+            position:relative;max-height:80vh;overflow-y:auto}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;
+             color:var(--text2);font-size:1.2rem;cursor:pointer;
+             width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+             border-radius:50%;border:1px solid var(--border)}
+.modal-close:hover{color:var(--text)}
+.modal-title{font-family:var(--serif);font-size:1.3rem;margin-bottom:16px}
+.modal-row{margin-bottom:14px}
+.modal-row-label{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;
+                  text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.modal-row-text{font-size:.85rem;color:var(--text2);line-height:1.55}
+.modal-fuente{font-family:var(--mono);font-size:.68rem;color:var(--text3);
+              margin-top:16px;border-top:1px solid var(--border);padding-top:12px}
+
+/* Nota faltante */
+.nota-faltante{background:var(--surface);border-radius:10px;padding:16px 20px;
+               border:1px solid var(--border);font-family:var(--mono);
+               font-size:.78rem;color:var(--text3);line-height:1.6}
+
+/* Footer */
+footer{padding:40px 0;border-top:1px solid var(--border);margin-top:60px}
+.disclaimer{font-family:var(--mono);font-size:.72rem;color:var(--text3);
+            line-height:1.7;max-width:680px}
+
+@media(max-width:600px){
+  .header-inner{flex-direction:column}
+  .scores-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+
+<header class="site-header">
+  <div class="wrap">
+    <div class="header-inner">
+      <div>
+        <div class="header-meta">BioData 2.0 · 13 Jun 2026</div>
+        <div class="header-name">Wilma Reyes</div>
+        <div class="header-badges"><span class="badge ok">Estado 76.7/100</span><span class="badge ok">Tendencia ↑ mejorando</span><span class="badge bad">2 alertas activas</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+<nav>
+  <div class="wrap nav-inner">
+    <a class="nav-link" href="#scores">Los 3 scores</a>
+    <a class="nav-link" href="#examenes">Exámenes</a>
+    <a class="nav-link" href="#wearable">Wearable</a>
+    <a class="nav-link" href="#cruce">Cruce clínico</a>
+    <a class="nav-link" href="#recomendaciones">Plan de acción</a>
+    <a class="nav-link" href="#checklist">Checklist</a>
+  </div>
+</nav>
+
+
+<section id="scores">
+  <div class="wrap">
+    <div class="section-label">Los 3 scores</div>
+    <h2>Tu salud en <em>tres dimensiones</em></h2>
+    <p class="section-intro">Estado = dónde estás · Tendencia = hacia dónde vas · Riesgo = qué podría pasar si nada cambia.</p>
+    <div class="scores-grid">
+      
+<div class="score-card" id="card-estado">
+  <button class="info-btn" onclick="openModal('score_estado')" style="top:16px;right:16px">ⓘ</button>
+  <h3>Score Estado</h3>
+  <svg class="score-circle" width="140" height="140" viewBox="0 0 140 140">
+    <circle cx="70" cy="70" r="54" fill="none" stroke="var(--surface2)" stroke-width="10"/>
+    <circle cx="70" cy="70" r="54" fill="none" stroke="#42f5a7" stroke-width="10"
+      stroke-linecap="round" stroke-dasharray="339.3"
+      stroke-dashoffset="339.3"
+      transform="rotate(-90 70 70)"
+      id="arc-estado"
+      style="transition:stroke-dashoffset 1.5s ease"/>
+    <text x="70" y="74" text-anchor="middle" font-family="DM Serif Display,serif"
+      font-size="36" fill="#42f5a7">76.7</text>
+    <text x="70" y="92" text-anchor="middle" font-family="DM Mono,monospace"
+      font-size="10" fill="var(--text3)">/100</text>
+  </svg>
+  <span class="score-badge" style="background:#42f5a722;color:#42f5a7">
+    Bueno
+  </span>
+  <p class="score-note">Confianza 100% · Score de estado completo.</p>
+</div>
+<script>
+  window.addEventListener('load', function() {
+    var arc = document.getElementById('arc-estado');
+    if (arc) arc.style.strokeDashoffset = '79.1';
+  });
+</script>
+      
+<div class="score-card" id="card-tendencia">
+  <button class="info-btn" onclick="openModal('score_tendencia')" style="top:16px;right:16px">ⓘ</button>
+  <h3>Score Tendencia</h3>
+  <div class="score-num" style="color:#f5c842;margin:16px 0">52.4</div>
+  <div class="tend-bar-wrap">
+    <div class="tend-marker" style="left:52.4%"></div>
+  </div>
+  <div class="tend-labels"><span>Empeorando</span><span>Estable</span><span>Mejorando</span></div>
+  <span class="score-badge" style="background:#f5c84222;color:#f5c842;margin-top:12px">↑ mejorando</span>
+  <p class="score-note">Resolución: media (solo wearable) · Confianza 60%</p>
+</div>
+      
+<div class="score-card" id="card-riesgo" style="text-align:left">
+  <button class="info-btn" onclick="openModal('score_riesgo')" style="top:16px;right:16px">ⓘ</button>
+  <h3 style="text-align:center">Score Riesgo</h3>
+  <svg width="160" height="90" viewBox="0 0 160 90" style="display:block;margin:8px auto">
+    <path d="M 10 80 A 70 70 0 0 1 150 80" fill="none" stroke="var(--surface2)" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 10 80 A 70 70 0 0 1 150 80" fill="none" stroke="#f5c842" stroke-width="12"
+      stroke-linecap="round" stroke-dasharray="188.5"
+      stroke-dashoffset="188.5" id="arc-riesgo"
+      style="transition:stroke-dashoffset 1.5s ease"/>
+    <text x="80" y="72" text-anchor="middle" font-family="DM Serif Display,serif"
+      font-size="28" fill="#f5c842">45</text>
+    <text x="80" y="86" text-anchor="middle" font-family="DM Mono,monospace"
+      font-size="9" fill="var(--text3)">/100</text>
+  </svg>
+  <script>
+    window.addEventListener('load', function() {
+      var arc = document.getElementById('arc-riesgo');
+      if (arc) arc.style.strokeDashoffset = '103.7';
+    });
+  </script>
+  <p class="score-note" style="text-align:center">Confianza 100% · Factor patrón ×1.00</p>
+  <ul class="alerta-list"><li class="alerta-item"><span class="alerta-icon">▲</span>HbA1c en zona prediabética alta (≥6.0%). Atención.</li><li class="alerta-item"><span class="alerta-icon">▲</span>Ratio TG/HDL elevado (5.8): riesgo cardiometabólico.</li></ul>
+</div>
+    </div>
+  </div>
+</section>
+
+
+<section id="examenes">
+  <div class="wrap">
+    <div class="section-label">Biomarcadores de sangre</div>
+    <h2>Lo que la <em>sangre dice</em></h2>
+    <p class="section-intro">Valores derivados de tus exámenes de laboratorio. Verde = óptimo · Amarillo = límite · Rojo = fuera de rango funcional.</p>
+    <div class="card-grid">
+<div class="bm-card" style="border-top-color:#42f5a7">
+  <button class="info-btn" onclick="openModal('homa_ir')">ⓘ</button>
+  <div class="bm-label">HOMA-IR</div>
+  <div><span class="bm-val" style="color:#42f5a7">0.86</span></div>
+  <span class="bm-tag" style="background:#42f5a722;color:#42f5a7">Óptimo</span>
+  <div class="bm-range">Óptimo: 0.0–1.5</div>
+</div>
+<div class="bm-card" style="border-top-color:#ff5c5c">
+  <button class="info-btn" onclick="openModal('tg_hdl')">ⓘ</button>
+  <div class="bm-label">TG/HDL</div>
+  <div><span class="bm-val" style="color:#ff5c5c">5.80</span></div>
+  <span class="bm-tag" style="background:#ff5c5c22;color:#ff5c5c">Alterado</span>
+  <div class="bm-range">Óptimo: 0.0–2.0</div>
+</div>
+<div class="bm-card" style="border-top-color:#555">
+  <button class="info-btn" onclick="openModal('tyg_index')">ⓘ</button>
+  <div class="bm-label">TyG Index</div>
+  <div><span class="bm-val" style="color:#555">9.69</span></div>
+  <span class="bm-tag" style="background:#55522;color:#555">—</span>
+  <div class="bm-range"></div>
+</div>
+<div class="bm-card" style="border-top-color:#42f5a7">
+  <button class="info-btn" onclick="openModal('hdl')">ⓘ</button>
+  <div class="bm-label">HDL</div>
+  <div><span class="bm-val" style="color:#42f5a7">—</span><span class="bm-unit">mg/dL</span></div>
+  <span class="bm-tag" style="background:#42f5a722;color:#42f5a7">Óptimo</span>
+  <div class="bm-range">Óptimo M: >50.0 mg/dL</div>
+</div>
+<div class="bm-card" style="border-top-color:#42f5a7">
+  <button class="info-btn" onclick="openModal('ldl')">ⓘ</button>
+  <div class="bm-label">LDL</div>
+  <div><span class="bm-val" style="color:#42f5a7">—</span><span class="bm-unit">mg/dL</span></div>
+  <span class="bm-tag" style="background:#42f5a722;color:#42f5a7">Óptimo</span>
+  <div class="bm-range">Óptimo: 0.0–100.0</div>
+</div>
+<div class="bm-card" style="border-top-color:#ff5c5c">
+  <button class="info-btn" onclick="openModal('trigliceridos')">ⓘ</button>
+  <div class="bm-label">Triglicéridos</div>
+  <div><span class="bm-val" style="color:#ff5c5c">—</span><span class="bm-unit">mg/dL</span></div>
+  <span class="bm-tag" style="background:#ff5c5c22;color:#ff5c5c">Alterado</span>
+  <div class="bm-range">Óptimo: 0.0–100.0</div>
+</div>
+<div class="bm-card" style="border-top-color:#42f5a7">
+  <button class="info-btn" onclick="openModal('hba1c')">ⓘ</button>
+  <div class="bm-label">HbA1c</div>
+  <div><span class="bm-val" style="color:#42f5a7">—</span><span class="bm-unit">%</span></div>
+  <span class="bm-tag" style="background:#42f5a722;color:#42f5a7">Óptimo</span>
+  <div class="bm-range">Óptimo: 4.0–5.4</div>
+</div>
+<div class="bm-card" style="border-top-color:#42f5a7">
+  <button class="info-btn" onclick="openModal('hscrp')">ⓘ</button>
+  <div class="bm-label">hsCRP</div>
+  <div><span class="bm-val" style="color:#42f5a7">—</span><span class="bm-unit">mg/L</span></div>
+  <span class="bm-tag" style="background:#42f5a722;color:#42f5a7">Óptimo</span>
+  <div class="bm-range">Óptimo: 0.0–1.0</div>
+</div></div>
+    
+  </div>
+</section>
+
+
+<section id="wearable">
+  <div class="wrap">
+    <div class="section-label">Datos del wearable</div>
+    <h2>Tu cuerpo <em>en tiempo real</em></h2>
+    <p class="section-intro">Series diarias de Apple Health. La tendencia (dirección) importa más que el valor absoluto de un día.</p>
+    <div class="card-grid">
+<div class="bm-card" style="border-top-color:#ff5c5c">
+  <button class="info-btn" onclick="openModal('hrv')">ⓘ</button>
+  <div class="bm-label">HRV</div>
+  <div class="bm-val" style="color:#ff5c5c;font-size:1.3rem">↓ empeorando</div>
+  <span class="bm-tag" style="background:#ff5c5c22;color:#ff5c5c">tendencia -0.18</span>
+</div>
+<div class="bm-card" style="border-top-color:#42f5a7">
+  <button class="info-btn" onclick="openModal('fc_reposo')">ⓘ</button>
+  <div class="bm-label">FC reposo</div>
+  <div class="bm-val" style="color:#42f5a7;font-size:1.3rem">↑ mejorando</div>
+  <span class="bm-tag" style="background:#42f5a722;color:#42f5a7">tendencia +0.21</span>
+</div>
+<div class="bm-card" style="border-top-color:#42f5a7">
+  <button class="info-btn" onclick="openModal('pasos')">ⓘ</button>
+  <div class="bm-label">Pasos</div>
+  <div class="bm-val" style="color:#42f5a7;font-size:1.3rem">↑ mejorando</div>
+  <span class="bm-tag" style="background:#42f5a722;color:#42f5a7">tendencia +0.15</span>
+</div></div>
+  </div>
+</section>
+
+
+<section id="cruce">
+  <div class="wrap">
+    <div class="section-label">Cruce con evidencia clínica</div>
+    <h2>Cuando los datos <em>se combinan</em></h2>
+    <p class="section-intro">Ningún marcador cuenta la historia solo. Estos patrones aparecen solo al mirar todo junto.</p>
+    <div class="card-grid-2">
+<div class="cruce-card" style="border-left-color:var(--red)">
+  <div class="cruce-titulo">Tu glucosa lleva meses en zona de alerta</div>
+  <div class="cruce-desc">La HbA1c refleja tu glucosa promedio de los últimos 3 meses. En zona prediabética significa que tu páncreas trabaja con sobrecarga sostenida — aún reversible con cambios de hábito.</div>
+  <div class="cruce-fuente">Evidencia: ADA 2024; calcificación coronaria ya aumenta en rango 5.7–6.4% (Int J Endocrinol Metab 2025).</div>
+</div>
+<div class="cruce-card" style="border-left-color:var(--red)">
+  <div class="cruce-titulo">Tu perfil lipídico muestra riesgo cardiovascular silencioso</div>
+  <div class="cruce-desc">El ratio TG/HDL es mejor predictor de infarto que el colesterol total. Un ratio alto indica lipoproteínas pequeñas y densas que se acumulan en arterias sin síntomas.</div>
+  <div class="cruce-fuente">Evidencia: Front Endocrinol 2025; AUC 0.820 para riesgo CV en 6.593 adultos.</div>
+</div></div>
+  </div>
+</section>
+
+
+<section id="recomendaciones">
+  <div class="wrap">
+    <div class="section-label">Plan de acción</div>
+    <h2>Qué hacer para <em>cambiar el rumbo</em></h2>
+    <p class="section-intro">Recomendaciones ordenadas por impacto según lo que tus datos muestran como prioridad.</p>
+    <div class="reco-grid">
+<div class="reco-card">
+  <div class="reco-icon">🏋️</div>
+  <div class="reco-title">Entrenamiento de fuerza</div>
+  <div class="reco-desc">2–3 sesiones semanales de 40–50 min. El músculo activo consume glucosa pasivamente — es la intervención más eficiente contra la resistencia a la insulina.</div>
+  <div class="reco-mejora">↑ Mejora: HOMA-IR · TG/HDL · VO2max · HRV</div>
+</div>
+<div class="reco-card">
+  <div class="reco-icon">🥗</div>
+  <div class="reco-title">Reducir azúcar líquida</div>
+  <div class="reco-desc">Bebidas azucaradas, jugos y alcohol tienen el mayor impacto sobre triglicéridos y grasa hepática. Un cambio, el mayor resultado.</div>
+  <div class="reco-mejora">↑ Mejora: TG · TG/HDL · HbA1c · Hígado</div>
+</div>
+<div class="reco-card">
+  <div class="reco-icon">😴</div>
+  <div class="reco-title">Sueño consistente</div>
+  <div class="reco-desc">7–8h a horario fijo mejora el HRV en 2–4 semanas y reduce cortisol (que activa acumulación de grasa visceral). La habitación a 18–20°C mejora la fase profunda.</div>
+  <div class="reco-mejora">↑ Mejora: HRV · FC reposo · Cortisol</div>
+</div>
+<div class="reco-card">
+  <div class="reco-icon">🚶</div>
+  <div class="reco-title">Consistencia de movimiento</div>
+  <div class="reco-desc">Más que los picos de ejercicio, importa no pasar días completos sentado. Meta: >7.000 pasos/día con <30% de días bajo 5.000.</div>
+  <div class="reco-mejora">↑ Mejora: Pasos · FC media · Sensibilidad insulínica</div>
+</div>
+<div class="reco-card">
+  <div class="reco-icon">📊</div>
+  <div class="reco-title">Medición cada 3 meses</div>
+  <div class="reco-desc">Los cambios metabólicos tardan 90 días en verse en sangre. Repetir exámenes y comparar activa el Score Tendencia y cierra el loop de seguimiento.</div>
+  <div class="reco-mejora">↑ Mejora: Score Tendencia · Motivación · Control</div>
+</div></div>
+  </div>
+</section>
+
+
+<section id="checklist">
+  <div class="wrap">
+    <div class="section-label">Próximos pasos</div>
+    <h2>Tu lista de <em>acción</em></h2>
+    <p class="section-intro">Tareas concretas ordenadas por urgencia. Márcalas a medida que las completes — se guardan en tu navegador.</p>
+    <div class="card" style="margin-bottom:14px">
+      <div class="section-label" style="margin-bottom:12px">Esta semana — urgente</div>
+      
+<div class="cl-item" id="cl0" onclick="toggleCheck('cl0')">
+  <div class="cl-check" id="chk-cl0">✓</div>
+  <div class="cl-text" id="txt-cl0">
+    <div>Revisar alertas con tu médico</div>
+    <div class="cl-sub">2 alertas activas requieren evaluación clínica</div>
+    <span class="cl-tag tag-u urgente">urgente</span>
+  </div>
+</div>
+<div class="cl-item" id="cl1" onclick="toggleCheck('cl1')">
+  <div class="cl-check" id="chk-cl1">✓</div>
+  <div class="cl-text" id="txt-cl1">
+    <div>Solicitar exámenes de sangre completos</div>
+    <div class="cl-sub">HbA1c, insulina, TG/HDL, hsCRP — gratis en CESFAM</div>
+    <span class="cl-tag tag-u urgente">urgente</span>
+  </div>
+</div>
+<div class="cl-item" id="cl2" onclick="toggleCheck('cl2')">
+  <div class="cl-check" id="chk-cl2">✓</div>
+  <div class="cl-text" id="txt-cl2">
+    <div>Primera sesión de entrenamiento de fuerza</div>
+    <div class="cl-sub">30–45 min, cualquier lugar — lo importante es empezar</div>
+    <span class="cl-tag tag-u urgente">urgente</span>
+  </div>
+</div>
+<div class="cl-item" id="cl3" onclick="toggleCheck('cl3')">
+  <div class="cl-check" id="chk-cl3">✓</div>
+  <div class="cl-text" id="txt-cl3">
+    <div>Definir horario fijo de sueño</div>
+    <div class="cl-sub">El HRV mejora visiblemente en 2 semanas con consistencia</div>
+    <span class="cl-tag tag-u urgente">urgente</span>
+  </div>
+</div>
+    </div>
+    <div class="card">
+      <div class="section-label" style="margin-bottom:12px">Hábitos continuos</div>
+      
+<div class="cl-item" id="cl4" onclick="toggleCheck('cl4')">
+  <div class="cl-check" id="chk-cl4">✓</div>
+  <div class="cl-text" id="txt-cl4">
+    <div>3 sesiones de fuerza esta semana</div>
+    <div class="cl-sub">Lunes / miércoles / viernes o días alternos</div>
+    <span class="cl-tag tag-s semanal">semanal</span>
+  </div>
+</div>
+<div class="cl-item" id="cl5" onclick="toggleCheck('cl5')">
+  <div class="cl-check" id="chk-cl5">✓</div>
+  <div class="cl-text" id="txt-cl5">
+    <div>Mantener >7.000 pasos por día</div>
+    <div class="cl-sub">La consistencia importa más que los picos</div>
+    <span class="cl-tag tag-s diario">diario</span>
+  </div>
+</div>
+<div class="cl-item" id="cl6" onclick="toggleCheck('cl6')">
+  <div class="cl-check" id="chk-cl6">✓</div>
+  <div class="cl-text" id="txt-cl6">
+    <div>Revisar métricas del wearable</div>
+    <div class="cl-sub">¿Subió el HRV? ¿Bajó la FC reposo? Anota los cambios</div>
+    <span class="cl-tag tag-s semanal">semanal</span>
+  </div>
+</div>
+<div class="cl-item" id="cl7" onclick="toggleCheck('cl7')">
+  <div class="cl-check" id="chk-cl7">✓</div>
+  <div class="cl-text" id="txt-cl7">
+    <div>Repetir exámenes en 3 meses</div>
+    <div class="cl-sub">Para activar el Score Tendencia y ver el impacto de los cambios</div>
+    <span class="cl-tag tag-m mensual">mensual</span>
+  </div>
+</div>
+    </div>
+    <div class="prog-bg"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="prog-lbl" id="progLbl">0 de 8 completadas</div>
+  </div>
+</section>
+
+<script>
+(function() {
+  var IDS = ["cl0", "cl1", "cl2", "cl3", "cl4", "cl5", "cl6", "cl7"];
+  var TOTAL = 8;
+  var KEY = 'biodata_cl_{}'.replace('{}', location.pathname);
+
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) { return {}; }
+  }
+  function saveState(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
+  function updateProg(s) {
+    var done = IDS.filter(function(id) { return s[id]; }).length;
+    document.getElementById('progFill').style.width = (done/TOTAL*100) + '%';
+    document.getElementById('progLbl').textContent = done + ' de ' + TOTAL + ' completadas';
+  }
+
+  window.toggleCheck = function(id) {
+    var s = loadState();
+    s[id] = !s[id];
+    saveState(s);
+    var el = document.getElementById(id);
+    var chk = document.getElementById('chk-' + id);
+    var txt = document.getElementById('txt-' + id);
+    if (s[id]) {
+      el.classList.add('done'); chk.textContent = '✓';
+    } else {
+      el.classList.remove('done'); chk.textContent = '';
+    }
+    updateProg(s);
+  };
+
+  // Restore state on load
+  window.addEventListener('DOMContentLoaded', function() {
+    var s = loadState();
+    IDS.forEach(function(id) {
+      if (s[id]) {
+        var el = document.getElementById(id);
+        var chk = document.getElementById('chk-' + id);
+        if (el) { el.classList.add('done'); chk.textContent = '✓'; }
+      }
+    });
+    updateProg(s);
+  });
+})();
+</script>
+
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close" onclick="closeModal()" aria-label="Cerrar">✕</button>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-row">
+      <div class="modal-row-label">Qué mide</div>
+      <div class="modal-row-text" id="modalQueMide"></div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-row-label">Por qué importa</div>
+      <div class="modal-row-text" id="modalPorQue"></div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-row-label">Rangos de referencia</div>
+      <div class="modal-row-text" id="modalRangos"></div>
+    </div>
+    <div class="modal-fuente" id="modalFuente"></div>
+  </div>
+</div>
+
+<script>
+var MODAL_INFO = {"homa_ir": {"titulo": "HOMA-IR — Resistencia a la insulina", "que_mide": "Proxy calculado de resistencia a la insulina: (glucosa × insulina) / 405.", "por_que": "Es el predictor más accesible de disfunción metabólica silenciosa. La resistencia a la insulina antecede a la diabetes tipo 2 por 10-15 años y es causa central de dislipidemia aterogénica, hígado graso e hipertensión.", "rangos": "Óptimo funcional: <1.5 · Zona de atención: 1.5–2.5 · Alerta: ≥2.5 (resistencia significativa)", "fuente": "Lee et al., PLoS One 2016 (estudio HK 15 años, n=2.006); NHANES (IR ≥2.5); ARIC Study (IC ≥1.5)."}, "tg_hdl": {"titulo": "TG/HDL — Dislipidemia aterogénica", "que_mide": "Ratio triglicéridos / HDL. Refleja el balance entre grasa circulante y colesterol protector.", "por_que": "Es mejor predictor de enfermedad cardiovascular y resistencia a la insulina que el LDL aislado. Un ratio alto indica partículas LDL pequeñas y densas (más aterogénicas) aunque el LDL total parezca normal.", "rangos": "Óptimo: <2.0 · Atención: 2.0–3.0 · Alerta: >3.0", "fuente": "Front Endocrinol 2025; estudio tailandés 2025 (n=61.004 adultos, corte 2.52); cutoff brasileño 1.7F/2.6H."}, "tyg_index": {"titulo": "TyG Index — Proxy de resistencia insulínica", "que_mide": "ln(TG × glucosa / 2). Marcador calculado que no requiere insulina basal.", "por_que": "Útil cuando no se dispone de insulina basal. Validado como predictor de riesgo cardiovascular y resistencia a la insulina en múltiples cohortes.", "rangos": "Riesgo aumentado: >8.5 (varía por población). Útil para seguimiento longitudinal.", "fuente": "Guerrero-Romero et al. 2010; revisiones 2024-2025 sobre riesgo CV."}, "hba1c": {"titulo": "HbA1c — Memoria glucémica", "que_mide": "Porcentaje de hemoglobina glicosilada. Refleja el promedio de glucosa en sangre durante los últimos 2–3 meses.", "por_que": "Detecta disglucemia antes de que la glucosa en ayunas se altere. Niveles ≥5.7% ya se asocian con inicio de calcificación coronaria silenciosa.", "rangos": "Óptimo funcional: <5.4% · Normal: <5.7% · Prediabetes: 5.7–6.4% · Diabetes: ≥6.5%", "fuente": "ADA Standards of Care 2024; Int J Endocrinol Metab 2025 (calcificación coronaria en 5.7–6.4%)."}, "hdl": {"titulo": "HDL — Colesterol protector", "que_mide": "Lipoproteína de alta densidad. Transporta colesterol desde arterias al hígado para su eliminación.", "por_que": "HDL bajo es el factor lipídico más prevalente en Chile (46% de la población). Se asocia con síndrome metabólico, resistencia a la insulina y riesgo cardiovascular aumentado.", "rangos": "Óptimo H: >45 mg/dL · Óptimo M: >50 mg/dL · Alerta H: <40 · Alerta M: <50", "fuente": "ATP III; ENS Chile 2016-2017 (prevalencia HDL bajo 46%)."}, "ldl": {"titulo": "LDL — Colesterol aterogénico", "que_mide": "Lipoproteína de baja densidad. Principal transportador de colesterol hacia las arterias.", "por_que": "LDL elevado es causa directa de aterosclerosis. El riesgo real depende del contexto (si hay resistencia a la insulina o inflamación, el LDL estándar puede subestimar el riesgo).", "rangos": "Óptimo: <100 mg/dL · Límite: 100–129 · Elevado: 130–159 · Alto: ≥160", "fuente": "Guías lipídicas internacionales ATP III; ESC/EAS 2019."}, "trigliceridos": {"titulo": "Triglicéridos — Grasa circulante", "que_mide": "Grasa (ácidos grasos) en sangre en ayunas. Refleja consumo de carbohidratos simples, alcohol y actividad física.", "por_que": "TG elevados son marcador de disfunción metabólica y aumentan el riesgo de pancreatitis. En combinación con HDL bajo, señalan síndrome metabólico.", "rangos": "Óptimo: <100 mg/dL · Normal: <150 · Límite: 150–199 · Alto: ≥200", "fuente": "ENS Chile 2016-2017; NCEP ATP III."}, "hscrp": {"titulo": "hsCRP — Inflamación crónica de bajo grado", "que_mide": "Proteína C reactiva de alta sensibilidad. Marcador de inflamación sistémica.", "por_que": "La inflamación crónica de bajo grado es el sustrato silencioso de la mayoría de las enfermedades crónicas: cardiovascular, diabetes tipo 2, y algunos cánceres. Es modificable con hábitos.", "rangos": "Bajo riesgo CV: <1.0 mg/L · Riesgo moderado: 1.0–3.0 · Alto riesgo: >3.0", "fuente": "AHA/CDC Joint Statement; Bruneck Study (seguimiento 20 años)."}, "hrv": {"titulo": "HRV — Variabilidad de la frecuencia cardíaca", "que_mide": "Variación en milisegundos entre latidos consecutivos. Refleja el equilibrio del sistema nervioso autónomo.", "por_que": "Un HRV alto indica que el sistema nervioso puede adaptarse al estrés. HRV bajo es señal de estrés crónico, mala recuperación, inflamación o disfunción autonómica. La tendencia (mejora o caída) importa más que el valor absoluto.", "rangos": "Mayor es mejor. Referencia poblacional varía por edad. Lo relevante es la tendencia personal.", "fuente": "Task Force ESC/NASPE 1996; múltiples estudios longitudinales 2020-2024."}, "fc_reposo": {"titulo": "FC en reposo — Eficiencia cardíaca", "que_mide": "Frecuencia cardíaca en reposo completo (normalmente matutina). Latidos por minuto en estado basal.", "por_que": "Un corazón entrenado bombea más sangre por latido y necesita latir menos veces. FC reposo alta se asocia con mayor mortalidad cardiovascular independiente de otros factores.", "rangos": "Óptimo funcional: <60 bpm · Atlético: <50 · Normal: 60–80 · Elevado: >80", "fuente": "Jouven et al., NEJM 2005; Cooney et al., European Heart Journal 2010."}, "vo2max": {"titulo": "VO2max — Capacidad aeróbica máxima", "que_mide": "Máximo consumo de oxígeno por kilogramo de peso durante esfuerzo máximo (ml/kg/min).", "por_que": "Es el predictor de mortalidad por todas las causas más potente conocido — más que el colesterol, la presión arterial o el tabaquismo. Cada incremento de 1 MET (~3.5 ml/kg/min) reduce la mortalidad ~13%.", "rangos": "Deficiente: <31 · Regular: 31–37 · Bueno: 38–43 · Excelente: 44–51 · Superior: >51 (hombres 30-39)", "fuente": "Ross et al., Mayo Clin Proc 2016; Kodama et al., JAMA 2009."}, "pasos": {"titulo": "Pasos diarios — Actividad física total", "que_mide": "Número de pasos registrados por día, promedio reciente.", "por_que": "Proxy simple y accesible de sedentarismo. Caminar reduce mortalidad cardiovascular, mejora sensibilidad a la insulina y controla el peso. La consistencia importa más que los picos aislados.", "rangos": "OMS recomienda 7.000–10.000/día. Meta funcional: >7.000 con <30% días bajo 5.000.", "fuente": "OMS 2020 (Physical Activity Guidelines); Paluch et al., JAMA Netw Open 2021."}, "score_estado": {"titulo": "Score Estado — ¿Cómo estás vs el óptimo?", "que_mide": "Comparación de tus marcadores contra rangos óptimos funcionales ponderados por relevancia clínica.", "por_que": "No es un promedio simple. HOMA-IR tiene peso 3×, HbA1c 2.5×, TG/HDL y hsCRP 2× cada uno. Un marcador crítico en zona de alerta baja el score drásticamente aunque el resto esté bien.", "rangos": "100 = todo en óptimo · 75–99 = bueno · 50–74 = zona de atención · <50 = acción requerida", "fuente": "Construcción propia basada en evidencia; rangos en EVIDENCIA.md."}, "score_tendencia": {"titulo": "Score Tendencia — ¿Mejoras o empeoRas?", "que_mide": "Evolución de tus marcadores vs tu propio baseline. No compara con población — compara contigo mismo.", "por_que": "La dirección importa más que el punto de partida. Alguien con HOMA-IR de 2.0 que lo está bajando es menos preocupante que alguien en 1.8 que lo está subiendo.", "rangos": "50 = estable · >50 mejorando · <50 empeorando. Alta resolución con wearable diario, baja con solo sangre.", "fuente": "Diseño propio; resolución depende de fuente de datos."}, "score_riesgo": {"titulo": "Score Riesgo — Patrones silenciosos", "que_mide": "Sistema de reglas con vetos y multiplicadores por patrón combinado. NO es un promedio.", "por_que": "Detecta combinaciones peligrosas que no se sienten. Resistencia a la insulina + inflamación es peor que la suma de las partes: el multiplicador refleja la evidencia del Bruneck Study sobre riesgo sinérgico.", "rangos": "0 = sin señales · >30 = atención · >60 = derivación recomendada. Un veto solo (HbA1c ≥6.5%) ya suma 40 puntos.", "fuente": "Bruneck Study (Kiechl et al.); NHANES; reglas propias documentadas en EVIDENCIA.md."}};
+
+function openModal(key) {
+  var info = MODAL_INFO[key];
+  if (!info) return;
+  document.getElementById('modalTitle').textContent = info.titulo || key;
+  document.getElementById('modalQueMide').textContent = info.que_mide || '';
+  document.getElementById('modalPorQue').textContent = info.por_que || '';
+  document.getElementById('modalRangos').textContent = info.rangos || '';
+  document.getElementById('modalFuente').textContent = 'Fuente: ' + (info.fuente || '—');
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+
+
+<footer>
+  <div class="wrap">
+    <p class="disclaimer">
+      Este análisis es informativo y educativo. No constituye diagnóstico médico ni reemplaza
+      la evaluación de un profesional de la salud. Los rangos y scores están basados en evidencia
+      publicada (fuentes en EVIDENCIA.md) y son orientativos para población general adulta.
+    </p>
+    <p style="font-family:var(--mono);font-size:.68rem;color:var(--text3);margin-top:12px">
+      BioData 2.0 · Generado automáticamente
+    </p>
+  </div>
+</footer>
+</body>
+</html>
